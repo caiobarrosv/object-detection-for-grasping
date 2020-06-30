@@ -24,6 +24,8 @@ This project is part if a bigger grasping pipeline firstly implemented in this [
 - M.Sc. Daniel M. de Oliveira* - [[Linkedin](https://www.linkedin.com/in/daniel-moura-de-oliveira-9b6754120/)] - danielmoura@ufba.br 
 - Prof. Dr. André Gustavo Scolari Conceição* - [[Lattes](http://lattes.cnpq.br/6840685961007897)] - andre.gustavo@ufba.br
 
+Todos os autores possuem igua
+
 *LaR - Laboratório de Robótica, Departamento de Engenharia Elétrica e de Computação, Universidade Federal da Bahia, Salvador, Brasil
 
 **PPGM - Programa de Pós-Graduação em Mecatrônica, Universidade Federal da Bahia, Salvador, Brasil.
@@ -36,7 +38,7 @@ In discussion.
 <a name="3.0"></a>
 ### 3.0 - Dataset Download
 
-Access this [link]() to download the preliminary dataset
+O link estará disponível em breve.
 
 <a name="4.0"></a>
 ### 4.0 - TO-DO List
