@@ -43,7 +43,7 @@ O link estará disponível em breve.
 <a name="4.0"></a>
 ### 4.0 - TO-DO List
 
-#### 3.1 - Detecção de objetos
+#### 4.1 - Detecção de objetos
 
 ![25$](https://progress-bar.dev/25) - Tirar 160 fotos de cada peça (são 8 peças no total) - Responsável: Caio
 
@@ -61,7 +61,7 @@ O link estará disponível em breve.
 
 ![0$](https://progress-bar.dev/0) - Definir quais serão os pré-processamentos aplicados nas imagens (variação de cor, brilho, random crop, zoom, etc) - Nesse passo a gente deve padronizar o código de pré-processamento para usar nos treinamentos de todas as redes - Responsáveis: Caio, Kleber e Daniel
 
-#### 3.2 - Parte prática
+#### 4.2 - Parte prática
 
 
 ![100$](https://progress-bar.dev/100) - Imprimir os "Adversarial Objects" do Dex-Net 2.0 - Responsável: Caio
@@ -76,7 +76,7 @@ O link estará disponível em breve.
 
 ![0$](https://progress-bar.dev/0) - Gravar um vídeo do experimento simulado
 
-#### 3.3 - Parte escrita
+#### 4.3 - Parte escrita
 
 
 ![0$](https://progress-bar.dev/0) - Definir um journal para publicação - Responsável: Todos
