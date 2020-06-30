@@ -38,7 +38,10 @@ In discussion.
 <a name="3.0"></a>
 ### 3.0 - Dataset Download
 
-O link estará disponível em breve.
+Objetos de treinamento:
+
+[Bar clamp](https://drive.google.com/file/d/1F9DrgFgdt-cfT-cjSImfLCjmFoc4V3SN/view?usp=sharing)
+[Gear box](https://drive.google.com/file/d/1JtUpxdmQf-T1sV6RTKfxf-LrZf1Cl-W8/view?usp=sharing)
 
 <a name="4.0"></a>
 ### 4.0 - TO-DO List
