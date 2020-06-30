@@ -76,6 +76,8 @@ Objetos de treinamento:
 
 ![0$](https://progress-bar.dev/0) - Fazer diversos testes no laboratório com o sistema. Serão realizadas 20 preensões por objeto. 
 
+![0$](https://progress-bar.dev/0) - Medir a performance de todas as redes em "ms" ao invés de "FPS" (Adotado por muitos autores na área de grasping). Talvez tenhamos que escolher o hardware de um dos autores para padronizar os dados de performance. 
+
 ![0$](https://progress-bar.dev/0) - Gravar um vídeo do experimento prático
 
 ![0$](https://progress-bar.dev/0) - Gravar um vídeo do experimento simulado
