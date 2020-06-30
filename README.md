@@ -12,7 +12,9 @@ This project is part if a bigger grasping pipeline firstly implemented in this [
 ### Contents
 1. [Authors](#1.0)
 2. [Required Packages](#2.0)
-3. [TO-DO List](#3.0)
+3. [Dataset Download](#3.0)
+4. [TO-DO List](#4.0)
+
 ------------
 <a name="1.0"></a>
 ### 1.0 - Authors
@@ -32,7 +34,12 @@ This project is part if a bigger grasping pipeline firstly implemented in this [
 In discussion.
 
 <a name="3.0"></a>
-### 3.0 - TO-DO List
+### 3.0 - Dataset Download
+
+Access this [link]() to download the preliminary dataset
+
+<a name="4.0"></a>
+### 4.0 - TO-DO List
 
 #### 3.1 - Detecção de objetos
 
