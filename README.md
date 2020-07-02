@@ -38,7 +38,11 @@ In discussion.
 <a name="3.0"></a>
 ### 3.0 - Dataset Download
 
-O link estará disponível em breve.
+Objetos de treinamento:
+
+[Bar clamp](https://drive.google.com/file/d/1F9DrgFgdt-cfT-cjSImfLCjmFoc4V3SN/view?usp=sharing)
+
+[Gear box](https://drive.google.com/file/d/1JtUpxdmQf-T1sV6RTKfxf-LrZf1Cl-W8/view?usp=sharing)
 
 <a name="4.0"></a>
 ### 4.0 - TO-DO List
@@ -71,6 +75,8 @@ O link estará disponível em breve.
 ![0$](https://progress-bar.dev/0) - Adicionar um limitador de altura para o grasp com o objetivo de evitar acidentes
 
 ![0$](https://progress-bar.dev/0) - Fazer diversos testes no laboratório com o sistema. Serão realizadas 20 preensões por objeto. 
+
+![0$](https://progress-bar.dev/0) - Medir a performance de todas as redes em "ms" ao invés de "FPS" (Adotado por muitos autores na área de grasping). Talvez tenhamos que escolher o hardware de um dos autores para padronizar os dados de performance. 
 
 ![0$](https://progress-bar.dev/0) - Gravar um vídeo do experimento prático
 
