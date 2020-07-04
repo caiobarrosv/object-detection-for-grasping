@@ -69,19 +69,22 @@ Training objects:
 
 ![25$](https://progress-bar.dev/25) - Fazer o annotation das fotos usando o software [LabelImg](https://github.com/tzutalin/labelImg) - Responsáveis: Caio, Kleber e Daniel
 
-![100$](https://progress-bar.dev/25) - Criar um script para TensorFlow para carregamento e visualização do dataset - Responsável: Caio
-
-![0$](https://progress-bar.dev/0) - Treinar a SSD512 com a ResNet50
-
-![0$](https://progress-bar.dev/0) - Treinar a SSD512 com a VGG16
-
-![0$](https://progress-bar.dev/0) - Treinar a SSD300 com a ResNet50
-
-![0$](https://progress-bar.dev/0) - Treinar a SSD300 com a VGG16
-
-![0$](https://progress-bar.dev/0) - Treinar a Faster R-CNN ResNet50
+![100$](https://progress-bar.dev/100) - Criar um script para TensorFlow para carregamento e visualização do dataset em formato TFRecord - Responsável: Caio
 
 ![0$](https://progress-bar.dev/0) - Definir quais serão os pré-processamentos aplicados nas imagens (variação de cor, brilho, random crop, zoom, etc) - Nesse passo a gente deve padronizar o código de pré-processamento para usar nos treinamentos de todas as redes - Responsáveis: Caio, Kleber e Daniel
+
+Treinar cada rede seguinte com o dataset de Adversarial Objects:
+
+- ![0$](https://progress-bar.dev/0) - SSD512 com a ResNet50 
+
+- ![0$](https://progress-bar.dev/0) - SSD512 com a VGG16
+
+- ![0$](https://progress-bar.dev/0) - SSD300 com a ResNet50
+
+- ![0$](https://progress-bar.dev/0) - SSD300 com a VGG16
+
+- ![0$](https://progress-bar.dev/0) - Faster R-CNN ResNet50
+
 
 #### 4.2 - Parte prática
 
