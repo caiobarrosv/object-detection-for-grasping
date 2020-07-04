@@ -92,7 +92,7 @@ Training objects:
 
 ![25$](https://progress-bar.dev/25) - Tirar 160 fotos de cada peça (são 8 peças no total) - Responsável: Caio
 
-![25$](https://progress-bar.dev/25) - Fazer o annotation das fotos usando o software [LabelImg](https://github.com/tzutalin/labelImg) - Responsáveis: Caio, Kleber e Daniel
+![25$](https://progress-bar.dev/25) - Fazer o annotation das fotos usando o software [LabelImg](https://github.com/tzutalin/labelImg) ou [VoTT](https://github.com/microsoft/VoTT)- Responsáveis: Caio, Kleber e Daniel
 
 ![100$](https://progress-bar.dev/100) - Criar um script para TensorFlow para carregamento e visualização do dataset em formato TFRecord - Responsável: Caio
 
