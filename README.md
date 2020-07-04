@@ -37,7 +37,7 @@ This repository gives you the tools to generate TFRecord files (train, validatio
 > All the following scripts may need small modifications in order to fit your data.
 
 - Please configure the file `config_files/config.json` and `label_map.json` to fit your images and files features and path. You just need to consider the repository folder as a root to reference the paths. The python code takes care of the rest.
-- You should create a folder called `images` and put all your images into this folder according to the class folder. Ex: `images/bar_clamp` or `images/gear_box` 
+- You should create a folder called `images` and put the [dataset images](#3.0) into this folder according to the class folder. Ex: `images/bar_clamp` or `images/gear_box` 
 - If you want to convert PASCAL VOC xml files to csv, you should create a folder `xml/PASCAL VOC`, put all your xml files into this folder and run the script `etc/xml_to_csv.py`. It may need small modifications to fit your data.
 - You should put your csv file into the `csv` folder.
   - Your csv file must be in the following format: 
