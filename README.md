@@ -8,15 +8,13 @@ This project is part if a bigger grasping pipeline firstly implemented in this [
 </p>
 </a>-->
 
-<a id="top"></a>
 ### Contents
 1. [Authors](#1.0)
-2. [Required Packages](#2.0)
+2. [Instructions](#2.0)
 3. [Dataset Download](#3.0)
 4. [TO-DO List](#4.0)
 
-------------
-<a name="1.0"></a>
+---
 ### 1.0 - Authors
 
 - M.Sc. Caio Viturino* - [[Lattes](http://lattes.cnpq.br/4355017524299952)] [[Linkedin](https://www.linkedin.com/in/engcaiobarros/)] - engcaiobarros@gmail.com
@@ -24,27 +22,45 @@ This project is part if a bigger grasping pipeline firstly implemented in this [
 - M.Sc. Daniel M. de Oliveira* - [[Linkedin](https://www.linkedin.com/in/daniel-moura-de-oliveira-9b6754120/)] - danielmoura@ufba.br 
 - Prof. Dr. André Gustavo Scolari Conceição* - [[Lattes](http://lattes.cnpq.br/6840685961007897)] - andre.gustavo@ufba.br
 
-Todos os autores possuem igua
-
 *LaR - Laboratório de Robótica, Departamento de Engenharia Elétrica e de Computação, Universidade Federal da Bahia, Salvador, Brasil
 
 **PPGM - Programa de Pós-Graduação em Mecatrônica, Universidade Federal da Bahia, Salvador, Brasil.
 
-<a name="2.0"></a>
-### 2.0 - Required Packages
+---
 
-In discussion.
+### 2.0 - Instructions
 
-<a name="3.0"></a>
+> For this project to work please install `Tensorflow 2.x` and `Python: 3.8`. It may need some code adaptations to work in previous versions.
+
+This repository gives you the tools to generate TFRecord files (train, validation, and test files) from images.
+
+> All the following scripts may need small modifications in order to fit your data.
+
+- Please configure the file `config_files/config.json` and `label_map.json` to fit your images and files features and path. You just need to consider the repository folder as a root to reference the paths. The python code takes care of the rest.
+- You should put all your images into the `images` folder according to the class folder.
+- If you want to convert xml to csv, put all your xml files into the `xml` folder and then run the script `etc/xml_to_csv.py`. It may need small modifications to fit your data.
+- You should put your csv file into the `csv` folder.
+  - Your csv file must be in the following format: 
+    ```sh 
+    "image","xmin","ymin","xmax","ymax","label"
+    "001.jpg",1843.5669909434714,1134.8309303950339,2521.393150378185,1610.1179645130937,"bar_clamp"
+    ```
+- Split your data by using the script `utils/split_data.py`. It will generate train, validation, and test csv files into the `data` folder.
+- Generate the TFRecord file by using the script `utils/generate_tfrecord.py`. It will generate TFRecord files into the `data` folder.
+- View your data by using the script `utils/view_record.py`. It will plot all the images and the bounding boxes from the TFRecord using OpenCV.
+
+---
+
 ### 3.0 - Dataset Download
 
-Objetos de treinamento:
+Training objects:
 
 [Bar clamp](https://drive.google.com/file/d/1F9DrgFgdt-cfT-cjSImfLCjmFoc4V3SN/view?usp=sharing)
 
 [Gear box](https://drive.google.com/file/d/1JtUpxdmQf-T1sV6RTKfxf-LrZf1Cl-W8/view?usp=sharing)
 
-<a name="4.0"></a>
+---
+
 ### 4.0 - TO-DO List
 
 #### 4.1 - Detecção de objetos
@@ -52,6 +68,8 @@ Objetos de treinamento:
 ![25$](https://progress-bar.dev/25) - Tirar 160 fotos de cada peça (são 8 peças no total) - Responsável: Caio
 
 ![25$](https://progress-bar.dev/25) - Fazer o annotation das fotos usando o software [LabelImg](https://github.com/tzutalin/labelImg) - Responsáveis: Caio, Kleber e Daniel
+
+![100$](https://progress-bar.dev/25) - Criar um script para TensorFlow para carregamento e visualização do dataset - Responsável: Caio
 
 ![0$](https://progress-bar.dev/0) - Treinar a SSD512 com a ResNet50
 

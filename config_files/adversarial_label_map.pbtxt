@@ -1,0 +1,8 @@
+item {
+  id: 1
+  name: "bar_clamp"
+}
+item {
+  id: 2
+  name: "gear_box"
+}

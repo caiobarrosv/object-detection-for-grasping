@@ -13,31 +13,19 @@ The sample used here is the Adversarial Object Data which comprises of the follo
 "ymax" : bounding box coordinates
 "label" : label
 
-Usage:
-python generate_tfrecord.py  --csv=../csv/Adversarial-Objects-Dataset-export.csv --image_dir=../csv --output_file=../data/adversarial.record 
-
 """
-import json
+
 import os
 import sys
-
+import numpy as np
 import pandas as pd
 import os
 import tensorflow as tf
-# import tensorflow.compat.v1 as tf
 from tqdm import tqdm
+import dataset_commons
+import cv2
 
-# tf.enable_eager_execution()
-
-# FLAGS, used as interface of user inputs.
-flags = tf.app.flags
-flags.DEFINE_string('data_train', '../data/data_train.csv', 'The csv file contains all file to be encoded.')
-flags.DEFINE_string('data_validation', '../data/data_validation.csv', 'The csv file contains all file to be encoded.')
-flags.DEFINE_string('image_dir', '../csv', 'The path of images directory')
-flags.DEFINE_string('output_train_file', '../data/adversarial_train.record', 'Where the record file should be placed.')
-flags.DEFINE_string('output_validation_file', '../data/adversarial_validation.record', 'Where the record file should be placed.')
-flags.DEFINE_string('image_size', '512', 'The final image size')
-FLAGS = flags.FLAGS
+dir_files = dataset_commons.get_dataset_files()
 
 def _int64_feature(value):
     """Returns an int64_list from a bool / enum / int / uint."""
@@ -58,47 +46,16 @@ def _bytes_feature(value):
     """Returns a bytes_list from a string / byte."""
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-
-def get_adversarial_files(sample_name):
-    """Generate sample files tuple"""
-    image_file = os.path.join(FLAGS.image_dir, sample_name)# + '.jpg')
-    return image_file
-
-def create_tf_example(image_sample, check_image = False):
-    """create TFRecord example from a data sample."""
-
-    # Use this only to check if it is all ok
-    if check_image:
-        init_op = tf.compat.v1.global_variables_initializer()
-        with tf.compat.v1.Session() as sess:
-            sess.run(init_op)
-            image = image2.eval() #here is your image Tensor :) 
-            print(image.shape)
-            print(image_sample["filename"])
-
-
-    # After getting all the features, time to generate a TensorFlow example
-    # Se o feature for string,      _bytes_feature (deve transformar para utf8)
-    # Se for inteiro,               _int64_feature
-    # Se for uma imagem,            _bytes_feature
-    # Se for uma lista de float,    _float_feature_list
-    # Se for um float,              _float_feature
-    feature = {
-        'filename': _bytes_feature(image_sample['filename'].encode('utf8')),
-        'image_format': _bytes_feature(image_sample['image_format'].encode('utf8')),
-        'image': _bytes_feature(image_sample['image']),
-        'xmin': _float_feature(image_sample['xmin']),
-        'ymin' : _float_feature(image_sample['ymin']),
-        'xmax': _float_feature(image_sample['xmax']),
-        'ymax' : _float_feature(image_sample['ymax']),
-        'label' : _bytes_feature(image_sample['label'].encode('utf8')),
-    }
-    tf_example = tf.train.Example(features=tf.train.Features(feature=feature))
-
-    return tf_example
+def _bytes_feature_list(value):
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=value))
 
 def generate_tf_record(tf_writer, samples):
+    # These are variables to normalize the bbox coordinates    
+    image_height = dir_files['image_height']
+    image_width = dir_files['image_width']
+
     for _, row in tqdm(samples.iterrows()):
+        # Reading data from the csv file
         sample_name = row['image']
         xmin = row['xmin']
         xmax = row['xmax']
@@ -106,39 +63,46 @@ def generate_tf_record(tf_writer, samples):
         ymax = row['ymax']
         label = row['label']
 
-        # Ex: Returns the img_file = data\001.jpg and mark_file = data\001.json
-        img_file_name = get_adversarial_files(sample_name)
-        
-        # ibug_sample = get_object_sample(img_file_name, mark_file)
+        print(label)
+
+        img_file_name = os.path.join(dir_files['image_folder'], label, sample_name)
 
         filename = img_file_name.split('\\')[-1].split('.')[-2] # get the file name
         ext_name = img_file_name.split('\\')[-1].split('.')[-1] # get the file extension 
 
+        print(img_file_name)
         with tf.io.gfile.GFile(img_file_name, 'rb') as fid:
-        # with tf.gfile.GFile(img_file_name, 'rb') as fid:
             encoded_jpg = fid.read()
-        
-        image_sample = {
-            "filename": img_file_name,
-            "image_format": ext_name,
-            "image": encoded_jpg,
-            "xmin": xmin,
-            "ymin" : ymin,
-            "xmax": xmax,
-            "ymax" : ymax,
-            "label" : label,
-            }
 
-        tf_example = create_tf_example(image_sample)
+        label_num = dir_files['label_map'][label]
+        print("Label num:", label_num)
+
+        label = label.encode('utf8')
+        
+        tf_example = tf.train.Example(features=tf.train.Features(feature={
+            "image/height": _int64_feature(image_height),
+            "image/width" : _int64_feature(image_width),
+            "image/filename": _bytes_feature(filename.encode('utf8')),
+            "image/source_id": _bytes_feature(filename.encode('utf8')),
+            "image/format": _bytes_feature(ext_name.encode('utf8')),
+            "image/encoded": _bytes_feature(encoded_jpg),
+            "image/object/bbox/xmin": _float_feature(xmin / image_width),
+            "image/object/bbox/xmax": _float_feature(xmax / image_width),
+            "image/object/bbox/ymin" : _float_feature(ymin / image_height),
+            "image/object/bbox/ymax" : _float_feature(ymax / image_height),
+            "image/object/bbox/label_text" : _bytes_feature_list([label]),
+            'image/object/bbox/label' : _int64_feature(label_num),
+        }))
         tf_writer.write(tf_example.SerializeToString())
 
 def main(_):
-    tf_writer_train = tf.io.TFRecordWriter(FLAGS.output_train_file)
-    tf_writer_validation = tf.io.TFRecordWriter(FLAGS.output_validation_file)
+    tf_writer_train = tf.io.TFRecordWriter(dir_files['train_file'])
+    tf_writer_validation = tf.io.TFRecordWriter(dir_files['test_file'])
     writers = [tf_writer_train, tf_writer_validation]
     
-    train_samples = pd.read_csv(FLAGS.data_train)
-    validation_samples = pd.read_csv(FLAGS.data_validation)
+    train_samples = pd.read_csv(dir_files['csv_train'])
+
+    validation_samples = pd.read_csv(dir_files['csv_validation'])
     samples = [train_samples, validation_samples]
 
     for i in range(len(writers)):

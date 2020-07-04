@@ -11,93 +11,70 @@ import argparse
 import cv2
 import numpy as np
 import tensorflow as tf
+import os
+import dataset_commons
 
-tf.enable_eager_execution()
+# tf.enable_eager_execution()
 
 FLAGS = None
 IMG_SIZE = 128
 COORDINATE_SIZE = 1
 
-def parse_tfrecord(record_path):
-    """Try to extract a image from the record file as jpg file."""
-    dataset = tf.data.TFRecordDataset(record_path)
+def convert_image(image):
+    image = np.array(image, np.uint8)
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    return image
 
-    # Create a dictionary describing the features. This dict should be
-    # consistent with the one used while generating the record file.
-    feature_description = {        
-        "filename": tf.FixedLenFeature([], tf.string),
-        "image_format": tf.FixedLenFeature([], tf.string),
-        "image": tf.FixedLenFeature([], tf.string),
-        "xmin": tf.FixedLenFeature([COORDINATE_SIZE], tf.float32),
-        "ymin" : tf.FixedLenFeature([COORDINATE_SIZE], tf.float32),
-        "xmax": tf.FixedLenFeature([COORDINATE_SIZE], tf.float32),
-        "ymax" : tf.FixedLenFeature([COORDINATE_SIZE], tf.float32),
-        "label" : tf.FixedLenFeature([], tf.string),
-    }
+def resize_image_and_bounding_box(targetSize, image, xmin, ymin, xmax, ymax):
+    x_scale = targetSize / image.shape[1]
+    y_scale = targetSize / image.shape[0]
+    image = cv2.resize(image, (targetSize, targetSize), interpolation = cv2.INTER_AREA)
+    
+    (origLeft, origTop, origRight, origBottom) = (xmin, ymin, xmax, ymax)
+    x = int(np.round(origLeft * x_scale))
+    y = int(np.round(origTop * y_scale))
+    xmax = int(np.round(origRight * x_scale))
+    ymax = int(np.round(origBottom * y_scale))
+            
+    boxes = [[1, 0, x, y, xmax, ymax]] # caso haja mais de um
 
-    def _parse_function(example_proto):
-        # Parse the input tf.Example proto using the dictionary above.
-        return tf.io.parse_single_example(example_proto, feature_description)
-
-    parsed_dataset = dataset.map(_parse_function)
-    return parsed_dataset
-
-
-def _draw_landmark_point(image, points):
-    """Draw landmark point on image."""
-    for point in points:
-        cv2.circle(image, (int(point[0]), int(
-            point[1])), 2, (0, 255, 0), -1, cv2.LINE_AA)
-
+    return image, boxes
 
 def show_record(filenames):
     """Show the TFRecord contents"""
     # Generate dataset from TFRecord file.
-    parsed_dataset = parse_tfrecord(filenames)
-
-    for example in parsed_dataset:
-        filename = example['filename'].numpy()
-        image_format = example['image_format'].numpy()
-        image = tf.image.decode_image(example['image']).numpy()
-        xmin = example['xmin'].numpy()
-        ymin = example['ymin'].numpy()
-        xmax = example['xmax'].numpy()
-        ymax = example['ymax'].numpy()
-        label = example['label'].numpy()
-
-        print(filename, image_format, xmin, ymin, xmax, ymax, label)
+    parsed_dataset = dataset_commons.parse_tfrecord(filenames)
     
-        # Use OpenCV to preview the image.
-        image = np.array(image, np.uint8)
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    for example in parsed_dataset:
+        image_height = example['image/height'].numpy()
+        image_width = example['image/width'].numpy()
+        filename = example['image/filename'].numpy()
+        source_id = example['image/source_id'].numpy()
+        image_format = example['image/format'].numpy()
+        image = tf.image.decode_image(example['image/encoded']).numpy()
+        xmin = example['image/object/bbox/xmin'].numpy() * image_width # Unormalize bbox coord.
+        xmax = example['image/object/bbox/xmax'].numpy() * image_width # Unormalize bbox coord.
+        ymin = example['image/object/bbox/ymin'].numpy() * image_height # Unormalize bbox coord.
+        ymax = example['image/object/bbox/ymax'].numpy() * image_height # Unormalize bbox coord.
+        label_text = example['image/object/bbox/label_text'].numpy()
+        label = example['image/object/bbox/label'].numpy()
 
-        targetSize = 512
-        x_scale = targetSize / image.shape[1]
-        y_scale = targetSize / image.shape[0]
-        image = cv2.resize(image, (targetSize, targetSize), interpolation = cv2.INTER_AREA)
-
-        (origLeft, origTop, origRight, origBottom) = (xmin, ymin, xmax, ymax)
-        x = int(np.round(origLeft * x_scale))
-        y = int(np.round(origTop * y_scale))
-        xmax = int(np.round(origRight * x_scale))
-        ymax = int(np.round(origBottom * y_scale))
-                
-        boxes = [[1, 0, x, y, xmax, ymax]] # caso haja mais de um
+            
+        # Use OpenCV to preview the image.        
+        image = convert_image(image)
+        image, boxes = resize_image_and_bounding_box(512, image, xmin, ymin, xmax, ymax)        
+        
         for i in range(0, len(boxes)):
         # changed color and width to make it visible
             cv2.rectangle(image, (boxes[i][2], boxes[i][3]), (boxes[i][4], boxes[i][5]), (255, 0, 0), 1)
 
+        image = cv2.putText(image, str(label_text), (boxes[0][2], boxes[0][3]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0))
+        image = cv2.putText(image, 'label: ' + str(label), (boxes[0][2], boxes[0][3]-30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0))
         cv2.imshow("img", image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--record",
-        type=str,
-        default="..\\data\\adversarial_train.record",
-        help="The record file."
-    )
-    args = parser.parse_args()
-    show_record(args.record)
+    dir_files = dataset_commons.get_dataset_files()
+
+    show_record(dir_files['train_file'])

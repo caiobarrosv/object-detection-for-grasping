@@ -1,0 +1,12 @@
+{
+    "label_map" : "config_files/label_map.json",
+    "image_folder" : "images",
+    "image_height" : 4032,
+    "image_width" : 3024,
+    "csv_path" : "csv/adversarial_dataset_converted.csv",
+    "csv_train" : "data/data_train.csv",
+    "csv_validation" : "data/data_validation.csv",
+    "csv_test" : "data/data_test.csv",
+    "record_train_path" : "data/adversarial_train.record",
+    "record_test_path": "data/adversarial_test.record"
+  }
