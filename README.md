@@ -10,9 +10,10 @@ This project is part if a bigger grasping pipeline firstly implemented in this [
 
 ### Contents
 1. [Authors](#1.0)
-2. [Instructions](#2.0)
-3. [Dataset Download](#3.0)
-4. [TO-DO List](#4.0)
+2. [Requirements](#2.0)
+3. [Instructions](#3.0)
+4. [Dataset Download](#4.0)
+5. [TO-DO List](#5.0)
 
 ---
 ### 1.0 - Authors
@@ -28,7 +29,31 @@ This project is part if a bigger grasping pipeline firstly implemented in this [
 
 ---
 
-### 2.0 - Instructions
+### 2.0 - Requirements
+
+Please install the following:
+
+- Cuda 10.1
+- CuDNN 7.6.5
+
+If you use conda, set up a new environment and activate it by using:
+
+```
+conda create --name object_detection_tf2
+conda activate object_detection_tf2
+```
+
+Install this repository and the required packages
+```
+git clone https://github.com/caiobarrosv/object-detection-for-grasping
+pip install -r requirements.txt
+```
+
+
+
+---
+
+### 3.0 - Instructions
 
 > For this project to work please install `Tensorflow 2.x` and `Python: 3.8`. It may need some code adaptations to work in previous versions.
 
@@ -51,7 +76,7 @@ This repository gives you the tools to generate TFRecord files (train, validatio
 
 ---
 
-### 3.0 - Dataset Download
+### 4.0 - Dataset Download
 
 Training objects:
 
@@ -61,9 +86,9 @@ Training objects:
 
 ---
 
-### 4.0 - TO-DO List
+### 5.0 - TO-DO List
 
-#### 4.1 - Detecção de objetos
+#### 5.1 - Detecção de objetos
 
 ![25$](https://progress-bar.dev/25) - Tirar 160 fotos de cada peça (são 8 peças no total) - Responsável: Caio
 
@@ -86,7 +111,7 @@ Treinar cada rede seguinte com o dataset de Adversarial Objects:
 - ![0$](https://progress-bar.dev/0) - Faster R-CNN ResNet50
 
 
-#### 4.2 - Parte prática
+#### 5.2 - Parte prática
 
 
 ![100$](https://progress-bar.dev/100) - Imprimir os "Adversarial Objects" do Dex-Net 2.0 - Responsável: Caio
@@ -103,7 +128,7 @@ Treinar cada rede seguinte com o dataset de Adversarial Objects:
 
 ![0$](https://progress-bar.dev/0) - Gravar um vídeo do experimento simulado
 
-#### 4.3 - Parte escrita
+#### 5.3 - Parte escrita
 
 
 ![0$](https://progress-bar.dev/0) - Definir um journal para publicação - Responsável: Todos

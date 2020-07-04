@@ -70,9 +70,14 @@ def show_record(filenames):
 
         image = cv2.putText(image, str(label_text), (boxes[0][2], boxes[0][3]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0))
         image = cv2.putText(image, 'label: ' + str(label), (boxes[0][2], boxes[0][3]-30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0))
-        cv2.imshow("img", image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        
+        cv2.startWindowThread()
+        cv2.imshow('img', image)
+        a = cv2.waitKey(0) # close window when ESC is pressed
+        if a == 27:
+            break
+        cv2.destroyWindow('img')
+        cv2.waitKey(1)
 
 if __name__ == "__main__":
     dir_files = dataset_commons.get_dataset_files()
