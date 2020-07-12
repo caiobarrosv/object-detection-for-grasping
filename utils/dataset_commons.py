@@ -61,8 +61,6 @@ def get_dataset_files():
     dir = {
         'train_file' : os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', config["record_train_path"])),
         'test_file' : os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', config["record_test_path"])),
-        'image_height' : config["image_height"],
-        'image_width' : config["image_width"],
         'number_of_classes' : len(label_map),
         'label_map' : label_map,
         'csv_path' : os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', config["csv_path"])),

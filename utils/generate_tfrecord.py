@@ -4,15 +4,22 @@ Code adapted from:
 https://github.com/yinguobing/tfrecord_utility
 
 The sample used here is the Adversarial Object Data which comprises of the following features:
-"filename": file name
-"image_format": file format (jpeg, png, etc)
-"image": raw image
-"xmin": bounding box coordinates
-"ymin" : bounding box coordinates
-"xmax": bounding box coordinates
-"ymax" : bounding box coordinates
-"label" : label
 
+"image/height": image height
+"image/width" : image width
+"image/filename": filename
+"image/source_id": 
+"image/format": file format
+"image/encoded": encoded image
+"image/object/bbox/xmin": bouding box coordinate
+"image/object/bbox/xmax":   bouding box coordinate
+"image/object/bbox/ymin" :  bouding box coordinate
+"image/object/bbox/ymax" :  bouding box coordinate
+"image/object/bbox/label_text" : label in text format
+"image/object/bbox/label" : label number
+
+
+the bounding box coordinates are normalized before storing in a TF file
 """
 
 import os
@@ -31,16 +38,13 @@ def _int64_feature(value):
     """Returns an int64_list from a bool / enum / int / uint."""
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
-
 def _float_feature(value):
     """Returns a float_list from a float / double."""
     return tf.train.Feature(float_list=tf.train.FloatList(value=[value]))
 
-
 def _float_feature_list(value):
     """Returns a float_list from a float / double."""
     return tf.train.Feature(float_list=tf.train.FloatList(value=value))
-
 
 def _bytes_feature(value):
     """Returns a bytes_list from a string / byte."""
@@ -51,21 +55,23 @@ def _bytes_feature_list(value):
 
 def generate_tf_record(tf_writer, samples):
     # These are variables to normalize the bbox coordinates    
-    image_height = dir_files['image_height']
-    image_width = dir_files['image_width']
-
+    
     for _, row in tqdm(samples.iterrows()):
         # Reading data from the csv file
-        sample_name = row['image']
+        image_name_with_extension = row['image']
         xmin = row['xmin']
         xmax = row['xmax']
         ymin = row['ymin']
         ymax = row['ymax']
         label = row['label']
+        image_height = row['height']
+        image_width = row['width']
 
         print(label)
+        print('height: ', image_height)
+        print('width: ', image_width)
 
-        img_file_name = os.path.join(dir_files['image_folder'], label, sample_name)
+        img_file_name = os.path.join(dir_files['image_folder'], image_name_with_extension)
 
         filename = img_file_name.split('\\')[-1].split('.')[-2] # get the file name
         ext_name = img_file_name.split('\\')[-1].split('.')[-1] # get the file extension 
@@ -91,17 +97,16 @@ def generate_tf_record(tf_writer, samples):
             "image/object/bbox/ymin" : _float_feature(ymin / image_height),
             "image/object/bbox/ymax" : _float_feature(ymax / image_height),
             "image/object/bbox/label_text" : _bytes_feature_list([label]),
-            'image/object/bbox/label' : _int64_feature(label_num),
+            "image/object/bbox/label" : _int64_feature(label_num),
         }))
         tf_writer.write(tf_example.SerializeToString())
 
-def main(_):
+def main():
     tf_writer_train = tf.io.TFRecordWriter(dir_files['train_file'])
     tf_writer_validation = tf.io.TFRecordWriter(dir_files['test_file'])
     writers = [tf_writer_train, tf_writer_validation]
     
     train_samples = pd.read_csv(dir_files['csv_train'])
-
     validation_samples = pd.read_csv(dir_files['csv_validation'])
     samples = [train_samples, validation_samples]
 
@@ -109,4 +114,5 @@ def main(_):
         generate_tf_record(writers[i], samples[i])
 
 if __name__ == '__main__':
-    tf.compat.v1.app.run()
+    # tf.compat.v1.app.run()
+    main()

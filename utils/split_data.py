@@ -15,8 +15,8 @@ dir_files = dataset_commons.get_dataset_files()
 full_data = pd.read_csv(dir_files['csv_path'])
 # number_of_classes = dir_files['number_of_classes']
 
-full_train_csv = pd.DataFrame(columns=['image', 'xmin', 'ymin','xmax', 'ymax', 'label'])
-full_validation_csv = pd.DataFrame(columns=['image', 'xmin', 'ymin','xmax', 'ymax', 'label'])
+full_train_csv = pd.DataFrame(columns=['image', 'xmin', 'ymin','xmax', 'ymax', 'label', 'height', 'width'])
+full_validation_csv = pd.DataFrame(columns=['image', 'xmin', 'ymin','xmax', 'ymax', 'label', 'height', 'width'])
 
 for (label_txt, label) in dir_files['label_map'].items():
     print(label_txt)

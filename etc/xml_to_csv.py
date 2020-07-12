@@ -5,12 +5,15 @@ import os
 import glob
 import pandas as pd
 import xml.etree.ElementTree as ET
+import cv2
 
-def xml_to_csv(path):
+def xml_to_csv(xml_path):
     xml_list = []
-    for xml_file in glob.glob(path + '/*.xml'):
+    i = 0
+    for xml_file in glob.glob(xml_path + '/*.xml'):
         tree = ET.parse(xml_file)
         root = tree.getroot()
+
         for member in root.findall('object'):
             bbx = member.find('bndbox')
             xmin = int(bbx.find('xmin').text)
@@ -24,17 +27,26 @@ def xml_to_csv(path):
             if label == 'gear box':
                 label = 'gear_box'
 
-            value = (root.find('filename').text,
-                    #  int(root.find('size')[0].text),
-                    #  int(root.find('size')[1].text),
+            filename = root.find('filename').text
+            images_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'images', filename))
+            print(images_path)
+            img = cv2.imread(images_path)
+
+            height, width, channels = img.shape # (4032, 3024, 3)
+            print('antes: ', height, width, channels)
+
+            value = (filename,
                      xmin,
                      ymin,
                      xmax,
                      ymax,
                      label,
-                     )
+                     str(height),
+                     str(width)
+                     )   
             xml_list.append(value)
-    column_name = ['image', 'xmin', 'ymin', 'xmax', 'ymax', 'label']
+
+    column_name = ['image', 'xmin', 'ymin', 'xmax', 'ymax', 'label', 'height', 'width']
     xml_df = pd.DataFrame(xml_list, columns=column_name)
     return xml_df
 

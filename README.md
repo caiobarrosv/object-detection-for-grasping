@@ -64,25 +64,44 @@ This repository gives you the tools to generate TFRecord files (train, validatio
 - Please configure the file `config_files/config.json` and `label_map.json` to fit your images and files features and path. You just need to consider the repository folder as a root to reference the paths. The python code takes care of the rest.
 - You should create a folder called `images` and put the [dataset images](#3.0) into this folder according to the class folder. Ex: `images/bar_clamp` or `images/gear_box` 
 - If you want to convert PASCAL VOC xml files to csv, you should create a folder `xml/PASCAL VOC`, put all your xml files into this folder and run the script `etc/xml_to_csv.py`. It may need small modifications to fit your data.
+- If you want to view the images and the bounding boxes pointed in the csv file, please run the script `utils/view_csv_files.py`
+- If you want to resize your images and save these images and a new csv file containing the resized bounding boxes and images sizes in a new folder, please run the script `utils/resize_images_csv.py` 
 - You should put your csv file into the `csv` folder.
   - Your csv file must be in the following format: 
     ```sh 
-    "image","xmin","ymin","xmax","ymax","label"
-    "001.jpg",1843.5669909434714,1134.8309303950339,2521.393150378185,1610.1179645130937,"bar_clamp"
+    image,xmin,ymin,xmax,ymax,label,height,width
+    000.jpg,463,273,635,450,bar_clamp,756,1008
     ```
-- Split your data by using the script `utils/split_data.py`. It will generate train, validation, and test csv files into the `data` folder.
+- Split your data by using the script `utils/split_data.py`. It will generate train, validation, and test csv files into the `csv` folder.
 - Generate the TFRecord file by using the script `utils/generate_tfrecord.py`. It will generate TFRecord files into the `data` folder.
 - View your data by using the script `utils/view_record.py`. It will plot all the images and the bounding boxes from the TFRecord using OpenCV.
+
+Folder structure:
+
+Note that you should create some folders yourself or change the path configuration in the `config.json` file.
+
+```bash
+├───config_files      # Files path configuration
+├───csv               # CSV files folder
+├───data              # TFRecord folder
+├───etc               # Auxiliary code
+├───images            # Please put your image in this folder
+├───utils             # Codes to manage the dataset
+└───xml               # Your .xml files
+    └───PASCAL VOC
+```
 
 ---
 
 ### 4.0 - Dataset Download
 
-Training objects:
+This dataset contains the gear box and bar clamp images.
+A bigger dataset is under development.
 
-[Bar clamp](https://drive.google.com/file/d/1F9DrgFgdt-cfT-cjSImfLCjmFoc4V3SN/view?usp=sharing)
+Image resolution: (756, 1008) # (height, width)
+Bouding box format: xmin, ymin, xmax, ymax
 
-[Gear box](https://drive.google.com/file/d/1JtUpxdmQf-T1sV6RTKfxf-LrZf1Cl-W8/view?usp=sharing)
+[Dataset](https://drive.google.com/file/d/1IrBlQRCX4731ISnXCqnuGpLrakFWPPbB/view?usp=sharing)
 
 ---
 
@@ -96,7 +115,12 @@ Training objects:
 
 ![100$](https://progress-bar.dev/100) - Criar um script para TensorFlow para carregamento e visualização do dataset em formato TFRecord - Responsável: Caio
 
+![0$](https://progress-bar.dev/0) - Criar um script para TensorFlow para carregamento e visualização do dataset em hdf5 - Responsável: Caio
+
+![0$](https://progress-bar.dev/0) - Carregar o dataset na SSD7 para testes experimentais utilizando o formato TFRecord - Responsável: Caio
+
 ![0$](https://progress-bar.dev/0) - Definir quais serão os pré-processamentos aplicados nas imagens (variação de cor, brilho, random crop, zoom, etc) - Nesse passo a gente deve padronizar o código de pré-processamento para usar nos treinamentos de todas as redes - Responsáveis: Caio, Kleber e Daniel
+Obs: O pré-processamento deve ser o padrão utilizado na SSD original para que comparações sejam feitas da forma correta.
 
 Treinar cada rede seguinte com o dataset de Adversarial Objects:
 
@@ -111,12 +135,10 @@ Treinar cada rede seguinte com o dataset de Adversarial Objects:
 - ![0$](https://progress-bar.dev/0) - Faster R-CNN ResNet50
 
 
-#### 5.2 - Parte prática
+#### 5.2 - Experimentos de laboratório 
 
 
 ![100$](https://progress-bar.dev/100) - Imprimir os "Adversarial Objects" do Dex-Net 2.0 - Responsável: Caio
-
-![0$](https://progress-bar.dev/0) - Atualizar a simulação no Gazebo, colocando as peças impressas para testar a performance da rede em ambientes virtuais.
 
 ![0$](https://progress-bar.dev/0) - Adicionar um limitador de altura para o grasp com o objetivo de evitar acidentes
 
@@ -125,6 +147,12 @@ Treinar cada rede seguinte com o dataset de Adversarial Objects:
 ![0$](https://progress-bar.dev/0) - Medir a performance de todas as redes em "ms" ao invés de "FPS" (Adotado por muitos autores na área de grasping). Talvez tenhamos que escolher o hardware de um dos autores para padronizar os dados de performance. 
 
 ![0$](https://progress-bar.dev/0) - Gravar um vídeo do experimento prático
+
+
+
+#### 5.3 - Simulações
+
+![0$](https://progress-bar.dev/0) - Atualizar a simulação no Gazebo, colocando as peças impressas para testar a performance da rede em ambientes virtuais.
 
 ![0$](https://progress-bar.dev/0) - Gravar um vídeo do experimento simulado
 
