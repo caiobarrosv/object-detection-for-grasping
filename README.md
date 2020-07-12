@@ -85,7 +85,7 @@ Note that you should create some folders yourself or change the path configurati
 ├───csv               # CSV files folder
 ├───data              # TFRecord folder
 ├───etc               # Auxiliary code
-├───images            # Please put your image in this folder
+├───images            # You should create this folder and put your images
 ├───utils             # Codes to manage the dataset
 └───xml               # Your .xml files
     └───PASCAL VOC
