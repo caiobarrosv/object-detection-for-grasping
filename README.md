@@ -13,7 +13,6 @@ This project is part if a bigger grasping pipeline firstly implemented in this [
 2. [Requirements](#2.0)
 3. [Instructions](#3.0)
 4. [Dataset Download](#4.0)
-5. [TO-DO List](#5.0)
 
 ---
 ### 1.0 - Authors
@@ -102,66 +101,3 @@ Image resolution: (756, 1008) # (height, width)
 Bouding box format: xmin, ymin, xmax, ymax
 
 [Dataset](https://drive.google.com/file/d/1IrBlQRCX4731ISnXCqnuGpLrakFWPPbB/view?usp=sharing)
-
----
-
-### 5.0 - TO-DO List
-
-#### 5.1 - Detecção de objetos
-
-![25$](https://progress-bar.dev/25) - Tirar 160 fotos de cada peça (são 8 peças no total) - Responsável: Caio
-
-![25$](https://progress-bar.dev/25) - Fazer o annotation das fotos usando o software [LabelImg](https://github.com/tzutalin/labelImg) ou [VoTT](https://github.com/microsoft/VoTT)- Responsáveis: Caio, Kleber e Daniel
-
-![100$](https://progress-bar.dev/100) - Criar um script para TensorFlow para carregamento e visualização do dataset em formato TFRecord - Responsável: Caio
-
-![0$](https://progress-bar.dev/0) - Criar um script para TensorFlow para carregamento e visualização do dataset em hdf5 - Responsável: Caio
-
-![0$](https://progress-bar.dev/0) - Carregar o dataset na SSD7 para testes experimentais utilizando o formato TFRecord - Responsável: Caio
-
-![0$](https://progress-bar.dev/0) - Definir quais serão os pré-processamentos aplicados nas imagens (variação de cor, brilho, random crop, zoom, etc) - Nesse passo a gente deve padronizar o código de pré-processamento para usar nos treinamentos de todas as redes - Responsáveis: Caio, Kleber e Daniel
-Obs: O pré-processamento deve ser o padrão utilizado na SSD original para que comparações sejam feitas da forma correta.
-
-Treinar cada rede seguinte com o dataset de Adversarial Objects:
-
-- ![0$](https://progress-bar.dev/0) - SSD512 com a ResNet50 
-
-- ![0$](https://progress-bar.dev/0) - SSD512 com a VGG16
-
-- ![0$](https://progress-bar.dev/0) - SSD300 com a ResNet50
-
-- ![0$](https://progress-bar.dev/0) - SSD300 com a VGG16
-
-- ![0$](https://progress-bar.dev/0) - Faster R-CNN ResNet50
-
-
-#### 5.2 - Experimentos de laboratório 
-
-
-![100$](https://progress-bar.dev/100) - Imprimir os "Adversarial Objects" do Dex-Net 2.0 - Responsável: Caio
-
-![0$](https://progress-bar.dev/0) - Adicionar um limitador de altura para o grasp com o objetivo de evitar acidentes
-
-![0$](https://progress-bar.dev/0) - Fazer diversos testes no laboratório com o sistema. Serão realizadas 20 preensões por objeto. 
-
-![0$](https://progress-bar.dev/0) - Medir a performance de todas as redes em "ms" ao invés de "FPS" (Adotado por muitos autores na área de grasping). Talvez tenhamos que escolher o hardware de um dos autores para padronizar os dados de performance. 
-
-![0$](https://progress-bar.dev/0) - Gravar um vídeo do experimento prático
-
-
-
-#### 5.3 - Simulações
-
-![0$](https://progress-bar.dev/0) - Atualizar a simulação no Gazebo, colocando as peças impressas para testar a performance da rede em ambientes virtuais.
-
-![0$](https://progress-bar.dev/0) - Gravar um vídeo do experimento simulado
-
-#### 5.3 - Parte escrita
-
-
-![0$](https://progress-bar.dev/0) - Definir um journal para publicação - Responsável: Todos
-
-![0$](https://progress-bar.dev/0) - Desenvolver a base teórica para o conteúdo apresentado - Responsável: Todos
-
-![0$](https://progress-bar.dev/0) - Iniciar a escrita do artigo - Responsável: Todos
-
