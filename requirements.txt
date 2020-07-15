@@ -1,7 +1,0 @@
-tensorflow-gpu==2.3.0rc0
-setuptools==47.3.1
-pandas==1.0.5
-numpy==1.18.5
-matplotlib==3.2.2
-opencv-python==4.2.0.34
-tqdm==4.47.0

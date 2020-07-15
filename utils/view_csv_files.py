@@ -7,7 +7,8 @@ from tqdm import tqdm
 import dataset_commons
 
 '''
-This code only visualizes the image and the related bounding box using openCV
+This code only gives you a tool to visualize 
+the images pointed in the csv file and the related bounding boxes using openCV
 '''
 dir_files = dataset_commons.get_dataset_files()
 

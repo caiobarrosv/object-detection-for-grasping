@@ -1,10 +1,12 @@
 {
     "label_map" : "config_files/label_map.json",
-    "image_folder" : "images",
-    "csv_path" : "csv/adversarial_dataset_converted.csv",
+    "image_folder" : "images_300_300",
+    "csv_path" : "images_300_300/csv/adversarial_dataset_300_300.csv",
     "csv_train" : "csv/data_train.csv",
     "csv_validation" : "csv/data_validation.csv",
     "csv_test" : "csv/data_test.csv",
     "record_train_path" : "data/adversarial_train.record",
-    "record_test_path": "data/adversarial_test.record"
+    "record_test_path": "data/adversarial_test.record",
+    "h5_train_path": "data/adversarial_train.h5",
+    "h5_validation_path": "data/adversarial_validation.h5"
   }

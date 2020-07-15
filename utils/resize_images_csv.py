@@ -6,9 +6,11 @@ import pandas as pd
 from tqdm import tqdm
 
 '''
-Este programa rotaciona as imagens que estão em (4032, 3024, 3) para (3024, 4032, 3)
-e depois redimensiona para (300, 480, 3)
+This python script resizes the images and save them to a new specified folder
+Please change the files path in main function.
 
+It will loop over the images, resizing it and showing it to you so you can verify
+if the bounding boxes are correct. Disable this function if you want to.
 '''
 
 def convert_image(image):
@@ -74,19 +76,12 @@ def load_image(images_path, images_path_save, csv_path):
         xmax = row['xmax'] 
         ymax = row['ymax']
 
-        print(image_name_with_extension)
-        print('height: ', height)
-        print('width: ', width)
-        print(xmin)
-        print(ymin)
-        print(xmax)
-        print(ymax)
+        print('File: ', image_name_with_extension)
 
-        print(images_path + '/' + str(image_name_with_extension))
         filename = glob.glob(images_path + '/' + str(image_name_with_extension))[0]
         img = cv2.imread(filename)
         
-        target_res = (480, 300) # (width, height) (1008, 756)
+        target_res = (300, 300) # (width, height) (1008, 756)
         img, xmin, ymin, xmax, ymax = resize_image_and_bounding_box(target_res, img, height, width, xmin, ymin, xmax, ymax)
 
         cv2.imwrite(os.path.abspath(os.path.join(os.path.dirname( __file__ ), images_path_save, image_name_with_extension)), img) 
@@ -121,11 +116,15 @@ def main():
 
     Rename the path to your dataset format
     '''
+    # TODO: Set the source files path
     images_path = 'images_new' # Folter containing the images
-    images_path_save = 'images_300_480' # Folder that will contain the resized images
-    xml_path_save = os.path.abspath(os.path.join(os.path.dirname( __file__ ), images_path_save, 'csv/adversarial_dataset_300_480.csv'))
-    csv_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), 'images_new', \
-        'csv/adversarial_dataset_converted.csv')) # the csv file you want to read
+    xml_source_path = 'images_new/csv/adversarial_dataset_converted.csv'
+    csv_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), xml_source_path)) # the csv file you want to read
+    
+    # TODO: Set the file save path
+    images_path_save = 'images_300_300' # Folder that will contain the resized images
+    xml_name = 'images_300_300/csv/adversarial_dataset_300_300.csv'
+    xml_path_save = os.path.abspath(os.path.join(os.path.dirname( __file__ ), xml_name))
 
     xml_df = load_image(images_path, images_path_save, csv_path)
     xml_df.to_csv(xml_path_save, index=None)

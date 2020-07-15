@@ -67,6 +67,8 @@ def get_dataset_files():
         'image_folder' : os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', config["image_folder"])),
         'csv_train' : os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', config["csv_train"])),
         'csv_validation' : os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', config["csv_validation"])),
+        'h5_train_path' : os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', config["h5_train_path"])),
+        'h5_validation_path' : os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', config["h5_validation_path"])),
     }    
 
     return dir

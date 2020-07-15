@@ -48,7 +48,7 @@ git clone https://github.com/caiobarrosv/object-detection-for-grasping
 pip install -r requirements.txt
 ```
 
-
+> **Important note:** This repository uses the code provided in `github.com/pierluigiferrari/ssd_keras` but you don't need to clone them, although it is a must to visit them, give a star, follow and read all the documentation because it is really well documented. The codes from this repository with small changes are given in `train_utils` folder.
 
 ---
 
@@ -74,6 +74,7 @@ This repository gives you the tools to generate TFRecord files (train, validatio
 - Split your data by using the script `utils/split_data.py`. It will generate train, validation, and test csv files into the `csv` folder.
 - Generate the TFRecord file by using the script `utils/generate_tfrecord.py`. It will generate TFRecord files into the `data` folder.
 - View your data by using the script `utils/view_record.py`. It will plot all the images and the bounding boxes from the TFRecord using OpenCV.
+- If you want to use your dataset in hdf5 format and you have only the csv file, you can use the `utils/create_hdf5_dataset_from_csv.py`. This code was created by `github.com/pierluigiferrari`, and we have made some small changes to fit our dataset.
 
 Folder structure:
 
