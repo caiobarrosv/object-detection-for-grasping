@@ -1,18 +1,20 @@
-from distutils.core import setup
+from setuptools import setup, find_packages
+import pathlib
+
+here = pathlib.Path(__file__).parent.resolve()
+
+long_description = (here / 'README.md').read_text(encoding='utf-8')
+
 
 setup(
-    # Needed to silence warnings (and to be a worthwhile package)
-    name='object_detection_for_grasping',
+    name='objectdetection',
+    version='0.1',
+    description='Object detection code for grasping',
     url='https://github.com/caiobarrosv/object_detection_for_grasping',
     author='Caio Viturino, Daniel Oliveira, Kleber Santana',
     author_email='engcaiobarros@gmail.com, dandmetal@gmail.com, engkleberf@gmail.com',
-    # Needed to actually package something
-    packages=['object_detection_for_grasping'],
-    # package_dir={'train_utils': 'object_detection_for_grasping/train_utils'},
-    # Most dependencies are already installed in Google Colab
+    package_dir={'': 'train_utils'},
+    packages=find_packages(where='train_utils'),
     install_requires=['numpy'],
-    version='0.1',
-    license='MIT',
-    description='Object detection code for grasping',
-    long_description=open('README.md').read(),
+    long_description=long_description,
 )
