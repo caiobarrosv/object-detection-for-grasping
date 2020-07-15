@@ -1,4 +1,4 @@
-from setuptools import setup
+from distutils.core import setup
 
 setup(
     # Needed to silence warnings (and to be a worthwhile package)
@@ -7,11 +7,12 @@ setup(
     author='Caio Viturino, Daniel Oliveira, Kleber Santana',
     author_email='engcaiobarros@gmail.com, dandmetal@gmail.com, engkleberf@gmail.com',
     # Needed to actually package something
-    packages=['object_detection_for_grasping'],
+    packages=['train_utils'],
+    # package_dir={'train_utils': 'object_detection_for_grasping/train_utils'},
     # Most dependencies are already installed in Google Colab
     install_requires=['numpy'],
     version='0.1',
     license='MIT',
     description='Object detection code for grasping',
-    # long_description=open('README.md').read(),
+    long_description=open('README.md').read(),
 )
