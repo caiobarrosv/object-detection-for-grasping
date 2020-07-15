@@ -13,5 +13,5 @@ setup(
     version='0.1',
     license='MIT',
     description='Object detection code for grasping',
-    long_description=open('README.md').read(),
+    # long_description=open('README.md').read(),
 )
