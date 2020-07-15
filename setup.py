@@ -7,7 +7,7 @@ setup(
     author='Caio Viturino, Daniel Oliveira, Kleber Santana',
     author_email='engcaiobarros@gmail.com, dandmetal@gmail.com, engkleberf@gmail.com',
     # Needed to actually package something
-    packages=['train_utils'],
+    packages=['object_detection_for_grasping'],
     # package_dir={'train_utils': 'object_detection_for_grasping/train_utils'},
     # Most dependencies are already installed in Google Colab
     install_requires=['numpy'],
