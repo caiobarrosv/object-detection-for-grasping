@@ -48,7 +48,7 @@ git clone https://github.com/caiobarrosv/object-detection-for-grasping
 pip install -r requirements.txt
 ```
 
-> **Important note:** This repository uses the code provided in `github.com/pierluigiferrari/ssd_keras` but you don't need to clone them, although it is a must to visit them, give a star, follow and read all the documentation because it is really well documented. The codes from this repository with small changes are given in `train_utils` folder.
+> **Important note:** This repository uses the code provided in `github.com/pierluigiferrari/ssd_keras` but you don't need to clone it, although it is a must visit github repo, give a star, follow and read all the documentation because it is really well documented. The codes from this repository with small changes are given in `train_utils` folder.
 
 ---
 
