@@ -18,9 +18,9 @@ limitations under the License.
 
 from __future__ import division
 import numpy as np
-import tensorflow as tf
-import tensorflow.keras.backend as K
-from tensorflow.python.keras.layers import Layer, InputSpec
+import keras.backend as K
+from keras.engine.topology import InputSpec
+from keras.engine.topology import Layer
 
 from bounding_box_utils.bounding_box_utils import convert_coordinates
 
@@ -197,6 +197,8 @@ class AnchorBoxes(Layer):
                 offset_height = self.this_offsets
                 offset_width = self.this_offsets
 
+        feature_map_height = feature_map_height.value
+        feature_map_width = feature_map_width.value
         # Now that we have the offsets and step sizes, compute the grid of anchor box center points.
         cy = np.linspace(offset_height * step_height, (offset_height + feature_map_height - 1) * step_height, feature_map_height)
         cx = np.linspace(offset_width * step_width, (offset_width + feature_map_width - 1) * step_width, feature_map_width)
