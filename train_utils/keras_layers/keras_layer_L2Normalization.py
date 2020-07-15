@@ -20,8 +20,6 @@ from __future__ import division
 import numpy as np
 import tensorflow.keras.backend as K
 from tensorflow.python.keras.layers import Layer, InputSpec
-# from keras.engine.topology import InputSpec
-# from keras.engine.topology import Layer
 
 class L2Normalization(Layer):
     '''
