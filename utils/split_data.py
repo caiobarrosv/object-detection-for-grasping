@@ -10,22 +10,23 @@ import dataset_commons
 
 np.random.seed(1)
 
-dir_files = dataset_commons.get_dataset_files()
+data_common = dataset_commons.get_dataset_files()
 
-full_data = pd.read_csv(dir_files['csv_path'])
-# number_of_classes = dir_files['number_of_classes']
+full_data = pd.read_csv(data_common['csv_path'])
 
 full_train_csv = pd.DataFrame(columns=['image', 'xmin', 'ymin','xmax', 'ymax', 'label', 'height', 'width'])
 full_validation_csv = pd.DataFrame(columns=['image', 'xmin', 'ymin','xmax', 'ymax', 'label', 'height', 'width'])
 
-for (label_txt, label) in dir_files['label_map'].items():
-    print(label_txt)
-    class_ = full_data.loc[full_data['label'] == label_txt]
+classes = data_common['classes']
+
+for key in classes:
+    print(key)
+    class_ = full_data.loc[full_data['label'] == key]
 
     # number of ground truth images
     total_file_number = len(class_)
 
-    print("There are total {} examples in this dataset.".format(total_file_number))
+    print("There are total {} examples in this dataset per class.".format(total_file_number))
     class_.head()
 
     # 80/20 train/validation
@@ -55,18 +56,18 @@ train_total_file_number = len(full_train_csv)
 # Choose x numbers considering the number of the total files
 index_train = np.random.choice(train_total_file_number, size=train_total_file_number, replace=False)
 full_train_csv = full_train_csv.iloc[index_train]
-full_train_csv.to_csv(dir_files['csv_train'], index=None)
+full_train_csv.to_csv(data_common['csv_train'], index=None)
 
 # Shuffle the full validation file
 validation_total_file_number = len(full_validation_csv)
 # Choose x numbers considering the number of the total files
 index_validation = np.random.choice(validation_total_file_number, size=validation_total_file_number, replace=False)
 full_validation_csv = full_validation_csv.iloc[index_validation]
-full_validation_csv.to_csv(dir_files['csv_validation'], index=None)
+full_validation_csv.to_csv(data_common['csv_validation'], index=None)
 
 # if num_test:
 #     index_test = np.setdiff1d(index_validation_test, index_validation)
 #     test = class_.iloc[index_test]
-#     test.to_csv(dir_files['csv_test'], index=None)
+#     test.to_csv(data_common['csv_test'], index=None)
 
 print("All done!")

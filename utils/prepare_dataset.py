@@ -35,6 +35,8 @@ lst_train_path = data_common['lst_train_path']
 lst_val_path = data_common['lst_val_path']
 image_folder = data_common['image_folder']
 
+classes = data_common['classes']
+
 def load_image(csv_path):
     """
     Load the csv file, and append the boxes lists, class ids, and file paths into
@@ -60,7 +62,10 @@ def load_image(csv_path):
 
         all_images_paths.append(img_path)
         all_boxes.append([xmin, ymin, xmax, ymax])
-        all_ids.extend([data_common['label_map'][label]])
+
+        # print(dir_files['classes']) = [['bar_clamp', 1], ['gear_box', 2]]
+        all_ids.extend([classes[label]])
+
         all_class_names.extend([label])
         
     all_boxes = np.array(all_boxes, dtype=float)
@@ -93,7 +98,7 @@ def visualize_images(all_images, all_boxes, all_ids, all_class_names):
         a = cv2.waitKey(0) # close window when ESC is pressed
         if a == 27:
             break
-        cv2.destroyWindow('img') 
+        cv2.destroyWindow('img')
     
 # Following the convention used in MXNet, we recommend a 
 # LST file which is a plain text list file to store labels.
@@ -137,7 +142,7 @@ def main():
     for i, csv_path in enumerate(csv_paths):
         all_images, all_boxes, all_ids, all_class_names = load_image(csv_path)
 
-        visualize_images(all_images, all_boxes, all_ids, all_class_names)
+        # visualize_images(all_images, all_boxes, all_ids, all_class_names)
 
         images_shape = (300, 300)
         create_lst_files(lst_paths[i], all_images, all_boxes, all_ids, all_class_names, images_shape)

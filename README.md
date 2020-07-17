@@ -95,6 +95,7 @@ This repository gives you the tools to generate record files (train, validation,
     Example:
     ```sh
     python im2rec.py data/train.lst . --pass-through --pack-label
+    python im2rec.py data/val.lst . --pass-through --pack-label
     ```
     
 - **How can I make sure that my record file was correctly generated?**

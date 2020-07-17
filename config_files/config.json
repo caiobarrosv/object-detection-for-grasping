@@ -1,14 +1,23 @@
 {
   "label_map" : "config_files/label_map.json",
+
+  "classes" : {
+                "bar_clamp": 1,
+                "gear_box": 2
+              },
+  
+  "checkpoint_folder" : "checkpoints",
   "image_folder" : "images_300_300",
+  
   "csv_path" : "images_300_300/csv/adversarial_dataset_300_300.csv",
+  
   "csv_train" : "csv/data_train.csv",
   "csv_validation" : "csv/data_validation.csv",
   "csv_test" : "csv/data_test.csv",
+  
   "lst_train_path" : "data/train.lst",
   "lst_val_path" : "data/val.lst",
-  "record_train_path" : "data/adversarial_train.record",
-  "record_val_path": "data/adversarial_val.record",
-  "h5_train_path": "data/adversarial_train.h5",
-  "h5_validation_path": "data/adversarial_validation.h5"
+  
+  "record_train_path" : "data/train.rec",
+  "record_val_path": "data/val.rec"
 }

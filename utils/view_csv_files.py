@@ -13,8 +13,7 @@ the images pointed in the csv file and the related bounding boxes using openCV
 dir_files = dataset_commons.get_dataset_files()
 
 def load_image():
-    
-    csv_path = dir_files['csv_train'] # dir_files['csv_train] or dir_files['csv_validation]
+    csv_path = dir_files['csv_train']
     images_path = dir_files['image_folder']
 
     train_samples = pd.read_csv(csv_path)
