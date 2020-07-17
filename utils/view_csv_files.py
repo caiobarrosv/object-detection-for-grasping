@@ -42,7 +42,6 @@ def load_image():
         if a == 27:
             break
         cv2.destroyWindow('img')
-        cv2.waitKey(1)
     
 if __name__ == "__main__":
     load_image()

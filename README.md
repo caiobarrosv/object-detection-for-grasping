@@ -2,6 +2,8 @@
 Repository dedicated to build a set Convolutional Neural Networks models to detect objects in order to perform a selective grasp.
 This project is part if a bigger grasping pipeline firstly implemented in this [repository](https://github.com/lar-deeufba/ssggcnn_ur5_grasping) by the Authors cited below.
 
+This repository is divided in branches for each framework implementation. The `master` branch refers to the `GluonCV (MXNet)` implementation. The `Tensorflow` branch refers to the `Tensorflow 2.0` implementation (both are under development).
+
 <!--<p align="center">
 <a href="https://youtu.be/aJ39MruDdLo" target="_blank">
 <img src="" width="600">
@@ -32,6 +34,7 @@ This project is part if a bigger grasping pipeline firstly implemented in this [
 
 Please install the following:
 
+- mxnet-cu101 1.5.0
 - Cuda 10.1
 - CuDNN 7.6.5
 
@@ -42,40 +45,66 @@ conda create --name object_detection_tf2
 conda activate object_detection_tf2
 ```
 
-Install this repository and the required packages
+If you want a shortcut to the required packages, install them by doing:
 ```
-git clone https://github.com/caiobarrosv/object-detection-for-grasping
 pip install -r requirements.txt
 ```
-
-> **Important note:** This repository uses the code provided in `github.com/pierluigiferrari/ssd_keras` but you don't need to clone them, although it is a must to visit them, give a star, follow and read all the documentation because it is really well documented. The codes from this repository with small changes are given in `train_utils` folder.
 
 ---
 
 ### 3.0 - Instructions
 
-> For this project to work please install `Tensorflow 2.x` and `Python: 3.8`. It may need some code adaptations to work in previous versions.
-
-This repository gives you the tools to generate TFRecord files (train, validation, and test files) from images.
+This repository gives you the tools to generate record files (train, validation, and test files) from images and train models provided by GluonCV.
 
 > All the following scripts may need small modifications in order to fit your data.
 
-- Please configure the file `config_files/config.json` and `label_map.json` to fit your images and files features and path. You just need to consider the repository folder as a root to reference the paths. The python code takes care of the rest.
-- You should create a folder called `images` and put the [dataset images](#3.0) into this folder according to the class folder. Ex: `images/bar_clamp` or `images/gear_box` 
-- If you want to convert PASCAL VOC xml files to csv, you should create a folder `xml/PASCAL VOC`, put all your xml files into this folder and run the script `etc/xml_to_csv.py`. It may need small modifications to fit your data.
-- If you want to view the images and the bounding boxes pointed in the csv file, please run the script `utils/view_csv_files.py`
-- If you want to resize your images and save these images and a new csv file containing the resized bounding boxes and images sizes in a new folder, please run the script `utils/resize_images_csv.py` 
-- You should put your csv file into the `csv` folder.
+- **How to change the file paths in all the files without modifying them individually?**
+  - Please configure the file `config_files/config.json` and `label_map.json` to fit your images and files features and path. You just need to consider the repository folder as a root to reference the paths. The python code takes care of the rest.
+
+- **How to organize my images?**
+  - You should create a folder called `images` and put the [dataset images](#3.0) into the folder. (Note: please, put all the images into this folder and **do not divide by class**)
+
+- **How can I check my csv files before generating the lst file (default in MXNet)?**
+  - If you want to view the images and the bounding boxes pointed in the csv file, please run the script `utils/view_csv_files.py`.
+
+- **Can I modify the images sizes before generating a new record file?**
+  - If you want to resize your images and save these images and a new csv file containing the resized bounding boxes and images sizes in a new folder, please run the script `utils/resize_images_csv.py` 
+
+- **Where to put my csv files?**
+  - You should put your csv file into the `csv` folder.
   - Your csv file must be in the following format: 
     ```sh 
     image,xmin,ymin,xmax,ymax,label,height,width
     000.jpg,463,273,635,450,bar_clamp,756,1008
     ```
-- Split your data by using the script `utils/split_data.py`. It will generate train, validation, and test csv files into the `csv` folder.
-- Generate the TFRecord file by using the script `utils/generate_tfrecord.py`. It will generate TFRecord files into the `data` folder.
-- View your data by using the script `utils/view_record.py`. It will plot all the images and the bounding boxes from the TFRecord using OpenCV.
-- If you want to use your dataset in hdf5 format and you have only the csv file, you can use the `utils/create_hdf5_dataset_from_csv.py`. This code was created by `github.com/pierluigiferrari`, and we have made some small changes to fit our dataset.
 
+- **How to divide my csv file in train/val/test csv files and shuffle them?** 
+  - Split your data by using the script `utils/split_data.py`. It will generate train, validation, and test csv files into the `csv` folder.
+
+- **How to generate a lst file for the GluonCV?**
+  - Please use the script `utils/prepate_dataset.py` for generating train/val lst files. The files will be saved in the data folder according to the config.json
+
+- **How to generate a record file from a lst file?**
+  - Use the `im2rec.py` script provided in the root folder and type the following command:
+    ```sh
+    python im2rec.py lst_file_name relative_root_to_images --pass-through --pack-label
+    ```
+    
+    Since the images path are included in the lst file when generating the lst file, please set the relative_root_to_images as the root folder [.]
+
+    Example:
+    ```sh
+    python im2rec.py data/train.lst . --pass-through --pack-label
+    ```
+    
+- **How can I make sure that my record file was correctly generated?**
+  - View your data by using the script `utils/view_record_mxnet.py`. It will plot all the images and the bounding boxes from the record using OpenCV.
+
+- **What if I don't have my files in csv format?**
+  - If you want to convert PASCAL VOC xml files to csv, you should create a folder `xml/PASCAL VOC`, put all your xml files into this folder and run the script `etc/xml_to_csv.py`. It may need small modifications to fit your data.
+  - Other parse scripts are under development
+
+---
 Folder structure:
 
 Note that you should create some folders yourself or change the path configuration in the `config.json` file.
