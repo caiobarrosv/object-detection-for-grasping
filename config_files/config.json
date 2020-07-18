@@ -2,8 +2,8 @@
   "label_map" : "config_files/label_map.json",
 
   "classes" : {
-                "bar_clamp": 1,
-                "gear_box": 2
+                "bar_clamp" : 1,
+                "gear_box" : 2
               },
   
   "checkpoint_folder" : "checkpoints",

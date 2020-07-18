@@ -67,7 +67,7 @@ This repository gives you the tools to generate record files (train, validation,
 - **How can I check my csv files before generating the lst file (default in MXNet)?**
   - If you want to view the images and the bounding boxes pointed in the csv file, please run the script `utils/view_csv_files.py`.
 
-- **Can I modify the images sizes before generating a new record file?**
+- **Can I modify the images sizes before generating a new lst file?**
   - If you want to resize your images and save these images and a new csv file containing the resized bounding boxes and images sizes in a new folder, please run the script `utils/resize_images_csv.py` 
 
 - **Where to put my csv files?**

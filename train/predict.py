@@ -9,13 +9,15 @@ from matplotlib import pyplot as plt
 import gluoncv.data.transforms.image as timage
 import gluoncv.data.transforms.bbox as tbbox
 import cv2
-
-# Foreground classes, must be in order
-CLASSES = ['pikachu']
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..')))
+import utils.dataset_commons as dataset_commons
 
 class Detector:
     def __init__(self, model_path, model='ssd300', ctx='gpu'):
-        self.classes = CLASSES
+        data_common = dataset_commons.get_dataset_files()
+        classes_keys = [key for key in data_common['classes']]
+        self.classes = classes_keys
         
         if ctx == 'cpu':
             self.ctx = mx.cpu()
@@ -26,7 +28,7 @@ class Detector:
         
         if model.lower() == 'ssd300':
             model_name = 'ssd_300_vgg16_atrous_voc' #'ssd_300_vgg16_atrous_coco'
-            self.width, self.height = 512, 512
+            self.width, self.height = 300, 300
         elif (model.lower() == 'frcnn'):
             model_name = 'faster_rcnn_resnet50_v1b_coco'
             short = 600 # used to transform the images for the Faster R-CNN
@@ -135,12 +137,12 @@ class Detector:
         a = cv2.waitKey(0) # close window when ESC is pressed
         cv2.destroyWindow('image')
             
-params = 'ssd_300_vgg16_atrous_voc_best.params'
-params_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', params))
-det = Detector(params_path, model='ssd300', ctx='gpu')
+params = 'checkpoints/ssd_300_vgg16_atrous_voc_best_epoch_0000.params'
+# params_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', params))
+det = Detector(params, model='ssd300', ctx='gpu')
 
-imagem = 'pikachu_test.jpg'
-imagem_teste = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'images', imagem))
+imagem = 'images_300_300/316.jpg'
+# imagem_teste = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'images', imagem))
 
-det.detect(imagem_teste)
+det.detect(imagem)
 det.plot_boxes_and_image()
