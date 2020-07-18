@@ -17,6 +17,7 @@ This repository is divided in branches for each framework implementation. The `m
 4. [Dataset Download](#4.0)
 
 ---
+<a name="1.0"></a>
 ### 1.0 - Authors
 
 - M.Sc. Caio Viturino* - [[Lattes](http://lattes.cnpq.br/4355017524299952)] [[Linkedin](https://www.linkedin.com/in/engcaiobarros/)] - engcaiobarros@gmail.com
@@ -29,7 +30,7 @@ This repository is divided in branches for each framework implementation. The `m
 **PPGM - Programa de Pós-Graduação em Mecatrônica, Universidade Federal da Bahia, Salvador, Brasil.
 
 ---
-
+<a name="2.0"></a>
 ### 2.0 - Requirements
 
 Please install the following:
@@ -51,7 +52,7 @@ pip install -r requirements.txt
 ```
 
 ---
-
+<a name="3.0"></a>
 ### 3.0 - Instructions
 
 This repository gives you the tools to generate record files (train, validation, and test files) from images and train models provided by GluonCV.
@@ -122,13 +123,16 @@ Note that you should create some folders yourself or change the path configurati
 ```
 
 ---
-
+<a name="4.0"></a>
 ### 4.0 - Dataset Download
 
 This dataset contains the gear box and bar clamp images.
 A bigger dataset is under development.
 
-Image resolution: (756, 1008) # (height, width)
 Bouding box format: xmin, ymin, xmax, ymax
 
-[Dataset](https://drive.google.com/file/d/1IrBlQRCX4731ISnXCqnuGpLrakFWPPbB/view?usp=sharing)
+[Dataset 1](https://drive.google.com/file/d/1IrBlQRCX4731ISnXCqnuGpLrakFWPPbB/view?usp=sharing)
+Image resolution: (756, 1008, 3) # (height, width, channel)
+
+[Dataset 2](https://drive.google.com/file/d/1zf8WPfhgEjUtlamjo58V3URlfXsPl-U6/view?usp=sharing)
+Image resolution: (300, 300, 3) # (height, width, channel)
