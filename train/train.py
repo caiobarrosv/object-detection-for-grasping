@@ -189,7 +189,7 @@ class training_network():
         current_map = float(current_map)
         if current_map > best_map[0]:
             best_map[0] = current_map
-            self.net.save_params('{:s}_best_epoch_{:04d}.params'.format(prefix, epoch, current_map))
+            self.net.save_params('{:s}_best.params'.format(prefix, epoch, current_map))
             with open(prefix+'_best_map.log', 'a') as f:
                 f.write('\n{:04d}:\t{:.4f}'.format(epoch, current_map))
         if save_interval and epoch % save_interval == 0:
