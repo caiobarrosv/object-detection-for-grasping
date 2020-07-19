@@ -63,7 +63,7 @@ def load_image(csv_path):
         all_images_paths.append(img_path)
         all_boxes.append([xmin, ymin, xmax, ymax])
 
-        # print(dir_files['classes']) = [['bar_clamp', 1], ['gear_box', 2]]
+        # classes = {'bar_clamp': 0, 'gear_box': 1}
         all_ids.extend([classes[label]])
 
         all_class_names.extend([label])

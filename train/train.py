@@ -129,11 +129,28 @@ class training_network():
         self.net = get_model(self.model_name, pretrained=True, norm_layer=gluon.nn.BatchNorm)
         self.net.reset_class(self.classes)
 
+        # Initialize the weights
+        if self.resume_training:
+            self.net.initialize(force_reinit=True, ctx=self.ctx)
+            self.net.load_params(self.resume, ctx=self.ctx)
+        else:
+            for param in self.net.collect_params().values():
+                if param._data is not None:
+                    continue
+                param.initialize()
+
     def get_dataset(self):
         if self.dataset == 'voc':
             self.train_dataset = gdata.RecordFileDetection(self.train_file)
+            img, label = self.train_dataset[0]
+            print(img.shape, label.shape)
+            
             self.val_dataset = gdata.RecordFileDetection(self.val_file)            
+            img, label = self.val_dataset[0]
+            print(img.shape, label.shape)
+
             self.val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=self.classes)
+
             # train_dataset = gdata.VOCDetection(
             #     splits=[(2007, 'trainval'), (2012, 'trainval')])
             # val_dataset = gdata.VOCDetection(
@@ -151,16 +168,13 @@ class training_network():
         else:
             raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
 
-    def initialize_network(self):
-        if self.resume_training:
-            self.net.initialize(force_reinit=True, ctx=self.ctx)
-            self.net.load_params(self.resume, ctx=self.ctx)
-        else:
-            for param in self.net.collect_params().values():
-                if param._data is not None:
-                    continue
-                param.initialize()
-    
+    def show_summary(self):
+        self.net.summary(mx.nd.ones((1, 3, self.height, self.width)))
+        # mx.viz.print_summary(self.net(mx.sym.var('data')), 
+                            #  shape={'data':(self.width,self.height, 3)})
+        # print(self.net)
+        # gutils.viz.network.plot_network(self.net.hybridize())
+
     def get_dataloader(self):
         batch_size, num_workers = self.batch_size, self.num_workers
         width, height = self.width, self.height
@@ -204,7 +218,9 @@ class training_network():
         eval_metric.reset()
         # set nms threshold and topk constraint
         self.net.set_nms(nms_thresh=0.45, nms_topk=400)
-        self.net.hybridize()
+
+        # allow the MXNet engine to perform graph optimization for best performance.
+        self.net.hybridize(static_alloc=True, static_shape=True)
         for batch in val_data:
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
             label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
@@ -249,15 +265,17 @@ class training_network():
         save_interval = self.save_interval
         log_interval = self.log_interval
 
-        # Returns a Dict containing this Block and all of its children’s Parameters
-        # For example, collect the specified parameters in [‘conv1.weight’, ‘conv1.bias’, ‘fc.weight’, ‘fc.bias’]:
-        # reset_ctx Re-assign all Parameters to other contexts.
-        self.net.collect_params().reset_ctx(ctx)
-        
+        # Gluon-CV requires you to create and load the parameters of your model first on 
+        # the CPU - so specify ctx=None - and when all that is done you move the 
+        # whole model on the GPU with:
+        self.net.collect_params().reset_ctx(self.ctx)
+
         # wd: The weight decay (or L2 regularization) coefficient.
         trainer = gluon.Trainer(self.net.collect_params(), optimizer,
                                 {'learning_rate': lr, 'wd': wd, 'momentum': momentum})
         
+        # speeds up the training process
+        # Check: https://mxnet.apache.org/api/python/docs/tutorials/performance/backend/amp.html
         amp.init_trainer(trainer)
 
         # lr decay policy
@@ -302,10 +320,17 @@ class training_network():
             self.net.hybridize(static_alloc=True, static_shape=True)
             
             for i, batch in enumerate(train_data):
+                print("i: ", i)
+                # Wait for completion of previous iteration to
+                # avoid unnecessary memory allocation
+                nd.waitall()
+
                 batch_size = batch[0].shape[0]
+
                 data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
                 cls_targets = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
                 box_targets = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0)
+
                 with autograd.record():
                     cls_preds = []
                     box_preds = []
@@ -352,19 +377,17 @@ class training_network():
             # Displays the time spent in each epoch
             end_epoch_time = time.time()
             logger.info('Epoch time {:.3f}'.format(end_epoch_time - start_epoch_time))
-            ## Current epoch finishes
 
         # Displays the total time of the training
         end_train_time = time.time()
         logger.info('Train time {:.3f}'.format(end_train_time - start_train_time))
 
 if __name__ == '__main__':
-    train_object = training_network(model='ssd300', ctx='gpu', lr=0.001, batch_size=4, epochs=2)
+    train_object = training_network(model='ssd300', ctx='gpu', lr=0.001, batch_size=4, epochs=4)
 
     train_object.get_dataset()
+    # train_object.show_summary()
 
-    train_object.initialize_network()
-    
     # Loads the dataset according to the batch size and num_workers
     train_object.get_dataloader()
 
