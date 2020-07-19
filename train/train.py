@@ -149,7 +149,7 @@ class training_network():
             img, label = self.val_dataset[0]
             print(img.shape, label.shape)
 
-            self.val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=self.classes)
+            self.val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=self.net.classes)
 
             # train_dataset = gdata.VOCDetection(
             #     splits=[(2007, 'trainval'), (2012, 'trainval')])
@@ -320,7 +320,6 @@ class training_network():
             self.net.hybridize(static_alloc=True, static_shape=True)
             
             for i, batch in enumerate(train_data):
-                print("i: ", i)
                 # Wait for completion of previous iteration to
                 # avoid unnecessary memory allocation
                 nd.waitall()

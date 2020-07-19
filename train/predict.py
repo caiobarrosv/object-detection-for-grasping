@@ -1,22 +1,23 @@
 import os
-from os.path import join as pjoin
 import mxnet as mx
 import gluoncv as gcv
 # from gluoncv.data.transforms.presets import ssd, rcnn
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import viz
-from matplotlib import pyplot as plt
 import gluoncv.data.transforms.image as timage
 import gluoncv.data.transforms.bbox as tbbox
 import cv2
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..')))
 import utils.dataset_commons as dataset_commons
+import time
 
 class Detector:
     def __init__(self, model_path, model='ssd300', ctx='gpu'):
-        data_common = dataset_commons.get_dataset_files()
-        classes_keys = [key for key in data_common['classes']]
+        self.data_common = dataset_commons.get_dataset_files()
+        self.model_path = os.path.join(self.data_common['checkpoint_folder'], model_path)
+        
+        classes_keys = [key for key in self.data_common['classes']]
         self.classes = classes_keys
         
         if ctx == 'cpu':
@@ -38,9 +39,11 @@ class Detector:
             raise ValueError('Invalid model `{}`.'.format(model.lower()))
         
         net = get_model(model_name, pretrained=False, ctx=self.ctx)
+        net.hybridize(static_alloc=True, static_shape=True)
         net.initialize(force_reinit=True, ctx=self.ctx)
+        print(self.classes)
         net.reset_class(classes=self.classes)
-        net.load_parameters(model_path, ctx=self.ctx)
+        net.load_parameters(self.model_path, ctx=self.ctx)
 		
         self.net = net
 
@@ -67,14 +70,46 @@ class Detector:
             return tensors[0], origs[0]
         return tensors, origs
         
-    def detect(self, image):     
-        image_tensor, image = self.ssd_val_transform(image)   
+    def detect(self, image, plot=False):
+        image = os.path.join(self.data_common['image_folder'], image)
+        image_tensor, image = self.ssd_val_transform(image)
         # x, image = self.transform(image, 300)
         labels, scores, bboxes = self.net(image_tensor.as_in_context(self.ctx))
+
         self.labels = labels
         self.scores = scores
         self.bboxes = bboxes
         self.image = image
+
+        if plot:
+            self.plot_boxes_and_image()
+
+    def detect_webcam(self, NUM_FRAMES=200):
+        # Load the webcam handler
+        cap = cv2.VideoCapture(0)
+        time.sleep(1) ### letting the camera autofocus
+
+        axes = None
+        a = cv2.waitKey(0) # close window when ESC is pressed     
+        while a is not 27:
+            # Load frame from the camera
+            ret, frame = cap.read()
+
+            # Image pre-processing
+            frame = mx.nd.array(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).astype('uint8')
+            rgb_nd, frame = gcv.data.transforms.presets.ssd.transform_test(frame, short=300, max_size=700)
+
+            # Run frame through network
+            class_IDs, scores, bounding_boxes = self.net(rgb_nd.as_in_context(self.ctx))
+
+            # Display the result
+            img = gcv.utils.viz.cv_plot_bbox(frame, bounding_boxes[0], scores[0], class_IDs[0], class_names=self.net.classes)
+            gcv.utils.viz.cv_plot_image(img)
+            # cv2.waitKey(1)
+            a = cv2.waitKey(1) # close window when ESC is pressed            
+        
+        cap.release()
+        cv2.destroyAllWindows()
 
     def plot_boxes_and_image(self, absolute_coordinates=True, thresh=0.5):
         """
@@ -137,12 +172,18 @@ class Detector:
         a = cv2.waitKey(0) # close window when ESC is pressed
         cv2.destroyWindow('image')
             
-params = 'checkpoints/ssd_300_vgg16_atrous_voc_best_epoch_0000.params'
-# params_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', params))
-det = Detector(params, model='ssd300', ctx='gpu')
+def main():
+    # You just need to pass the filename. The directory is configured in config.json file
+    params = 'ssd_300_vgg16_atrous_voc_best.params'
+    
+    det = Detector(params, model='ssd300', ctx='gpu')
 
-imagem = 'images_300_300/316.jpg'
-# imagem_teste = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'images', imagem))
+    # imagem = '315.jpg'    
+    # det.detect(imagem, plot=True)
 
-det.detect(imagem)
-det.plot_boxes_and_image()
+    number_of_frames = 200
+    det.detect_webcam(number_of_frames)
+
+
+if __name__ == "__main__":
+    main()
