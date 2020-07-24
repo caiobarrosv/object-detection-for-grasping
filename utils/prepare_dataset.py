@@ -19,16 +19,15 @@ it can vary by the network used.
 
 TODO: Please configure the files paths in config_files/config.json
 The parameters to be configured are:
-    - image_folder
+    - image_folder # Put all your images (train and val) here
     - csv_train
     - csv_validation
-    - lst_train_path
-    - lst_val_path
-    - image_folder
+    - lst_train_path # The lst file will be generated
+    - lst_val_path # The lst file will be generated
 '''
 
 data_common = dataset_commons.get_dataset_files()
-images_path = data_common['image_folder']
+# images_path = data_common['image_folder']
 csv_train_path = data_common['csv_train']
 csv_validation_path = data_common['csv_validation']
 lst_train_path = data_common['lst_train_path']

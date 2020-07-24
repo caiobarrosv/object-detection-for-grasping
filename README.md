@@ -51,6 +51,11 @@ If you want a shortcut to the required packages, install them by doing:
 pip install -r requirements.txt
 ```
 
+If you would like to see your training parameters in tensorboard, please follow the procedures stated in `https://github.com/awslabs/mxboard`.
+use the following commands to se the data in the web-browser:
+```
+tensorboard --logdir=./logs --host=127.0.0.1 --port=8888
+```
 ---
 <a name="3.0"></a>
 ### 3.0 - Instructions

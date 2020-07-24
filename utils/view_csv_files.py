@@ -12,22 +12,19 @@ the images pointed in the csv file and the related bounding boxes using openCV
 '''
 dir_files = dataset_commons.get_dataset_files()
 
-def load_image():
-    csv_path = dir_files['csv_train']
-    images_path = dir_files['image_folder']
+def load_images_from_csv(images_path, csv_path):
 
     train_samples = pd.read_csv(csv_path)
     csv_list = []
+
     for i, row in tqdm(train_samples.iterrows()):
         # Reading data from the csv file
         image_name_with_extension = row['image']
-        height = row['height']
-        width = row['width']
         label = row['label']
-        xmin = row['xmin'] 
-        ymin = row['ymin'] 
-        xmax = row['xmax'] 
-        ymax = row['ymax']
+        xmin = int(row['xmin'])
+        ymin = int(row['ymin'])
+        xmax = int(row['xmax'])
+        ymax = int(row['ymax'])
 
         filename = glob.glob(images_path + "/" + image_name_with_extension)[0]
         img = cv2.imread(filename)
@@ -43,4 +40,7 @@ def load_image():
         cv2.destroyWindow('img')
     
 if __name__ == "__main__":
-    load_image()
+    images_path = dir_files['image_folder']
+    csv_path = dir_files['csv_path']
+    
+    load_images_from_csv(images_path, csv_path)

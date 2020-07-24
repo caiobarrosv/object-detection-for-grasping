@@ -6,8 +6,10 @@ import pandas as pd
 from tqdm import tqdm
 
 '''
-This python script resizes the images and save them to a new specified folder
-Please change the files path in main function.
+This python script resizes the images pointed in a csv file and generates a new
+csv file with the new image resolution and the resized bounding boxes.
+
+This script does not take the config.json paths. Please configure in the main function
 
 It will loop over the images, resizing it and showing it to you so you can verify
 if the bounding boxes are correct. Disable this function if you want to.
@@ -54,13 +56,14 @@ def convert_min_max_to_centroids(xmin, ymin, xmax, ymax):
     h = ymax - ymin # Set h
     return cx, cy, w, h
 
-def load_image(images_path, images_path_save, csv_path):
+def load_image(images_path, images_path_save, csv_path, target_res):
     '''
     Load images from disk and save in a new size
 
-    images_path (str): The absolute path of the images folder
-    images_path_save (str): The absolute path of the resized image folder
-    csv_path (str): The absolute path of the csv file
+    Arguments:
+        images_path (str): The absolute path of the images folder
+        images_path_save (str): The absolute path of the resized image folder
+        csv_path (str): The absolute path of the csv file
     '''
 
     train_samples = pd.read_csv(csv_path) # 'adversarial_dataset_converted.csv')
@@ -68,8 +71,6 @@ def load_image(images_path, images_path_save, csv_path):
     for i, row in tqdm(train_samples.iterrows()):
         # Reading data from the csv file
         image_name_with_extension = row['image']
-        height = row['height']
-        width = row['width']
         label = row['label']
         xmin = row['xmin'] 
         ymin = row['ymin'] 
@@ -80,16 +81,19 @@ def load_image(images_path, images_path_save, csv_path):
 
         filename = glob.glob(images_path + '/' + str(image_name_with_extension))[0]
         img = cv2.imread(filename)
-        
-        target_res = (300, 300) # (width, height) (1008, 756)
+        height = img.shape[0]
+        width = img.shape[1]
+        print('height: ', height)
+        print('width: ', width)
+
         img, xmin, ymin, xmax, ymax = resize_image_and_bounding_box(target_res, img, height, width, xmin, ymin, xmax, ymax)
 
-        cv2.imwrite(os.path.abspath(os.path.join(os.path.dirname( __file__ ), images_path_save, image_name_with_extension)), img) 
+        cv2.imwrite(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', images_path_save, image_name_with_extension)), img) 
         cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (255, 0, 0), 1)
         
         cv2.startWindowThread()
         cv2.imshow('img', img)
-        a = cv2.waitKey(300) # close window when ESC is pressed
+        a = cv2.waitKey(200) # close window when ESC is pressed
         if a == 27:
             break
         cv2.destroyWindow('img')
@@ -106,8 +110,8 @@ def load_image(images_path, images_path_save, csv_path):
         csv_list.append(value)
     
     column_name = ['image', 'xmin', 'ymin', 'xmax', 'ymax', 'label', 'height', 'width']
-    xml_df = pd.DataFrame(csv_list, columns=column_name)
-    return xml_df    
+    csv_converter = pd.DataFrame(csv_list, columns=column_name)
+    return csv_converter    
 
 
 def main():
@@ -117,18 +121,28 @@ def main():
     Rename the path to your dataset format
     '''
     # TODO: Set the source files path
-    images_path = 'images_new' # Folter containing the images
-    xml_source_path = 'images_new/csv/adversarial_dataset_converted.csv'
-    csv_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), xml_source_path)) # the csv file you want to read
+    images_source_path = 'validacao' # Folter containing the images
+    csv_path = 'validacao/csv/val_dataset.csv'
+    # csv_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..',  csv_source_path)) # the csv file you want to read
     
     # TODO: Set the file save path
-    images_path_save = 'images_300_300' # Folder that will contain the resized images
-    xml_name = 'images_300_300/csv/adversarial_dataset_300_300.csv'
-    xml_path_save = os.path.abspath(os.path.join(os.path.dirname( __file__ ), xml_name))
+    images_path_save = 'validacao_300_300' # Folder that will contain the resized images
+    csv_path_save = 'validacao_300_300/csv/val_dataset.csv'
+    # csv_path_save = os.path.abspath(os.path.join(os.path.dirname( __file__ ), csv_target_path))
 
-    xml_df = load_image(images_path, images_path_save, csv_path)
-    xml_df.to_csv(xml_path_save, index=None)
-    print('Successfully converted xml to csv.')
+    target_resolution = (300, 300)
+
+    csv_converter = load_image(images_source_path, images_path_save, csv_path, target_resolution)
+
+    if not os.path.exists(images_path_save):
+        try:
+            os.makedirs('validacao_300_300/csv') 
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise   
+    
+    csv_converter.to_csv(csv_path_save, index=None)
+    print('Successfully converted to a new csv file.')
 
 if __name__ == "__main__":
     main()

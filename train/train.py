@@ -18,10 +18,11 @@ from gluoncv.data.transforms.presets.ssd import SSDDefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 from gluoncv.utils.metrics.accuracy import Accuracy
+from mxboard import SummaryWriter
+import cv2
 
 from mxnet.contrib import amp
 
-import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..')))
 import utils.dataset_commons as dataset_commons
@@ -117,7 +118,7 @@ class training_network():
 
         classes_keys = [key for key in data_common['classes']]
         self.classes = classes_keys
-        print(self.classes)
+        print('Classes: ', self.classes)
 
         # pretrained or pretrained_base?
         # pretrained (bool or str) – Boolean value controls whether to load the default 
@@ -142,12 +143,10 @@ class training_network():
     def get_dataset(self):
         if self.dataset == 'voc':
             self.train_dataset = gdata.RecordFileDetection(self.train_file)
-            img, label = self.train_dataset[0]
-            print(img.shape, label.shape)
+            # img, label = self.train_dataset[0]
             
             self.val_dataset = gdata.RecordFileDetection(self.val_file)            
-            img, label = self.val_dataset[0]
-            print(img.shape, label.shape)
+            # img, label = self.val_dataset[0]
 
             self.val_metric = VOC07MApMetric(iou_thresh=0.5, class_names=self.net.classes)
 
@@ -170,10 +169,6 @@ class training_network():
 
     def show_summary(self):
         self.net.summary(mx.nd.ones((1, 3, self.height, self.width)))
-        # mx.viz.print_summary(self.net(mx.sym.var('data')), 
-                            #  shape={'data':(self.width,self.height, 3)})
-        # print(self.net)
-        # gutils.viz.network.plot_network(self.net.hybridize())
 
     def get_dataloader(self):
         batch_size, num_workers = self.batch_size, self.num_workers
@@ -203,11 +198,11 @@ class training_network():
         current_map = float(current_map)
         if current_map > best_map[0]:
             best_map[0] = current_map
-            self.net.save_params('{:s}_best.params'.format(prefix, epoch, current_map))
+            self.net.save_parameters('{:s}_best_epoch_{:04d}_map_{:.4f}.params'.format(prefix, epoch, current_map))
             with open(prefix+'_best_map.log', 'a') as f:
                 f.write('\n{:04d}:\t{:.4f}'.format(epoch, current_map))
         if save_interval and epoch % save_interval == 0:
-            self.net.save_params('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
+            self.net.save_parameters('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
 
     def validate(self):
         """Test on validation dataset."""
@@ -217,7 +212,8 @@ class training_network():
 
         eval_metric.reset()
         # set nms threshold and topk constraint
-        self.net.set_nms(nms_thresh=0.45, nms_topk=400)
+        # post_nms = maximum number of objects per image
+        self.net.set_nms(nms_thresh=0.5, nms_topk=200, post_nms=1) # default: iou=0.45 e topk=400
 
         # allow the MXNet engine to perform graph optimization for best performance.
         self.net.hybridize(static_alloc=True, static_shape=True)
@@ -302,87 +298,108 @@ class training_network():
         best_map = [0]
         start_train_time = time.time()
 
-        for epoch in range(start_epoch, epochs):
-            start_epoch_time = time.time()
+        with SummaryWriter(logdir='./logs/teste1.2') as sw:
+            for epoch in range(start_epoch, epochs):
+                start_epoch_time = time.time()
 
-            while lr_steps and epoch >= lr_steps[0]:
-                new_lr = trainer.learning_rate * lr_decay
-                lr_steps.pop(0) # removes the first element in the list
-                trainer.set_learning_rate(new_lr) # Set a new learning rate
-                logger.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
-            
-            ce_metric.reset() # Resets the internal evaluation result to initial state.
-            smoothl1_metric.reset() # Resets the internal evaluation result to initial state.
-            tic = time.time()
-            btic = time.time()
-            
-            # Activates or deactivates HybridBlocks recursively. it speeds up the training process
-            self.net.hybridize(static_alloc=True, static_shape=True)
-            
-            for i, batch in enumerate(train_data):
-                # Wait for completion of previous iteration to
-                # avoid unnecessary memory allocation
-                nd.waitall()
-
-                batch_size = batch[0].shape[0]
-
-                data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
-                cls_targets = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
-                box_targets = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0)
-
-                with autograd.record():
-                    cls_preds = []
-                    box_preds = []
-                    for x in data:
-                        cls_pred, box_pred, _ = self.net(x)
-                        cls_preds.append(cls_pred)
-                        box_preds.append(box_pred)
-                    
-                    sum_loss, cls_loss, box_loss = mbox_loss(
-                        cls_preds, box_preds, cls_targets, box_targets)
-                    
-                    with amp.scale_loss(sum_loss, trainer) as scaled_loss:
-                        autograd.backward(scaled_loss)
-                    # autograd.backward(sum_loss)
+                sw.add_scalar('learning_rate', trainer.learning_rate, epoch)
+                while lr_steps and epoch >= lr_steps[0]:
+                    new_lr = trainer.learning_rate * lr_decay
+                    lr_steps.pop(0) # removes the first element in the list
+                    trainer.set_learning_rate(new_lr) # Set a new learning rate
+                    logger.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
                 
-                # since we have already normalized the loss, we don't want to normalize
-                # by batch-size anymore
-                trainer.step(1)
-                ce_metric.update(0, [l * batch_size for l in cls_loss])
-                smoothl1_metric.update(0, [l * batch_size for l in box_loss])
-                if log_interval and not (i + 1) % log_interval:
-                    name1, loss1 = ce_metric.get()
-                    name2, loss2 = smoothl1_metric.get()
-                    logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}'.format(
-                        epoch, i, batch_size/(time.time()-btic), name1, loss1, name2, loss2))
-                btic = time.time()
+                ce_metric.reset() # Resets the internal evaluation result to initial state.
+                smoothl1_metric.reset() # Resets the internal evaluation result to initial state.
 
-            name1, loss1 = ce_metric.get()
-            name2, loss2 = smoothl1_metric.get()
-            logger.info('[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}'.format(
-                epoch, (time.time()-tic), name1, loss1, name2, loss2))
+                tic = time.time() # each epoch time in seconds
+                btic = time.time() # each batch time interval in seconds
+                
+                # Activates or deactivates HybridBlocks recursively. it speeds up the training process
+                self.net.hybridize(static_alloc=True, static_shape=True)
+                
+                for i, batch in enumerate(train_data):
+                    # Wait for completion of previous iteration to
+                    # avoid unnecessary memory allocation
+                    nd.waitall()
 
-            if not (epoch + 1) % val_interval:
-                # consider reduce the frequency of validation to save time
-                map_name, mean_ap = self.validate()
-                val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
-                logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
-                current_map = float(mean_ap[-1])
-            else:
-                current_map = 0.
+                    batch_size = batch[0].shape[0]
+                    data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
+                    cls_targets = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
+                    box_targets = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0)
 
-            self.save_params(best_map, current_map, epoch, save_interval)
-            
-            # Displays the time spent in each epoch
-            end_epoch_time = time.time()
-            logger.info('Epoch time {:.3f}'.format(end_epoch_time - start_epoch_time))
+                    with autograd.record():
+                        cls_preds = []
+                        box_preds = []
+                        for x in data:
+                            cls_pred, box_pred, _ = self.net(x)
+                            cls_preds.append(cls_pred)
+                            box_preds.append(box_pred)
+                        
+                        sum_loss, cls_loss, box_loss = mbox_loss(
+                            cls_preds, box_preds, cls_targets, box_targets)
+                        
+                        with amp.scale_loss(sum_loss, trainer) as scaled_loss:
+                            autograd.backward(scaled_loss)
+                        # autograd.backward(sum_loss)
+                    
+                    # since we have already normalized the loss, we don't want to normalize
+                    # by batch-size anymore
+                    trainer.step(1)
+                    ce_metric.update(0, [l * batch_size for l in cls_loss])
+                    smoothl1_metric.update(0, [l * batch_size for l in box_loss])
 
-        # Displays the total time of the training
-        end_train_time = time.time()
-        logger.info('Train time {:.3f}'.format(end_train_time - start_train_time))
+                    # Log in mini-batch interval
+                    if not (i + 1) % log_interval:
+                        name1, loss1 = ce_metric.get()
+                        name2, loss2 = smoothl1_metric.get()
+                        
+                        # The samples/sec should be calculated according to the batch size
+                        # therefore, log_interval should be equal to the batch size
+                        logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}'.format(
+                            epoch, i, batch_size/(time.time()-btic), name1, loss1, name2, loss2))
+                    btic = time.time()
+
+                # log the epoch info
+                name1, loss1 = ce_metric.get()
+                name2, loss2 = smoothl1_metric.get()
+                # MXBoard
+                sw.add_scalar('epoch_loss', (name1, loss1), epoch)
+                sw.add_scalar('epoch_loss', (name2, loss2), epoch)
+                logger.info('[Epoch {}] Training time (min): {:.3f}, {}={:.3f}, {}={:.3f}'.format(
+                    epoch, (time.time()-tic)/60, name1, loss1, name2, loss2))
+                
+                # Displays the time spent in each epoch
+                # end_epoch_time = time.time()
+                # logger.info('Epoch time {:.3f}'.format(end_epoch_time - start_epoch_time))
+
+                # Perform validation
+                if not (epoch + 1) % val_interval:
+                    # consider reduce the frequency of validation to save time
+                    map_name, mean_ap = self.validate()
+                    val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
+                    
+                    for k, v in zip(map_name, mean_ap):
+                        sw.add_scalar('map', (k, v), epoch)
+                    
+                    logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
+                    current_map = float(mean_ap[-1])
+                else:
+                    current_map = 0.
+
+                self.save_params(best_map, current_map, epoch, save_interval)            
+
+            # Displays the total time of the training
+            end_train_time = time.time()
+            logger.info('Train time {:.3f}'.format(end_train_time - start_train_time))
+
+            sw.export_scalars('scalars.json')
 
 if __name__ == '__main__':
-    train_object = training_network(model='ssd300', ctx='gpu', lr=0.001, batch_size=4, epochs=4)
+    train_object = training_network(model='ssd300', ctx='gpu', \
+                                    lr_decay_epoch='30, 50', lr=0.001, \
+                                    lr_decay=0.1, batch_size=4, epochs=60, \
+                                    log_interval=4)
 
     train_object.get_dataset()
     # train_object.show_summary()

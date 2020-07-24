@@ -5,17 +5,17 @@
               },
   
   "checkpoint_folder" : "checkpoints",
-  "image_folder" : "images_300_300",
   
-  "csv_path" : "images_300_300/csv/adversarial_dataset_300_300.csv",
+  "image_folder" : "images_augmented",  
+  "csv_path" : "images_augmented/csv/val_dataset.csv",
   
-  "csv_train" : "csv/data_train.csv",
+  "csv_train" : "csv/data_train_1600.csv",
   "csv_validation" : "csv/data_validation.csv",
   "csv_test" : "csv/data_test.csv",
   
-  "lst_train_path" : "data/train.lst",
+  "lst_train_path" : "data/train_1600.lst",
   "lst_val_path" : "data/val.lst",
   
-  "record_train_path" : "data/train.rec",
+  "record_train_path" : "data/train_1600.rec",
   "record_val_path": "data/val.rec"
 }
