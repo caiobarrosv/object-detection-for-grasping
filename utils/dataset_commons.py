@@ -11,7 +11,6 @@ def get_dataset_files():
         'classes' : config["classes"],
         'checkpoint_folder' : config["checkpoint_folder"],
         'image_folder' : config["image_folder"],
-        'csv_path' : config["csv_path"],
         'csv_train' : config["csv_train"],
         'csv_validation' : config["csv_validation"],
         'lst_train_path' : config["lst_train_path"],

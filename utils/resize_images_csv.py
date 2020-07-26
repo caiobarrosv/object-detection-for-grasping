@@ -3,7 +3,6 @@ import numpy as np
 import os
 import glob
 import pandas as pd
-from tqdm import tqdm
 
 '''
 This python script resizes the images pointed in a csv file and generates a new
@@ -68,7 +67,7 @@ def load_image(images_path, images_path_save, csv_path, target_res):
 
     train_samples = pd.read_csv(csv_path) # 'adversarial_dataset_converted.csv')
     csv_list = []
-    for i, row in tqdm(train_samples.iterrows()):
+    for i, row in train_samples.iterrows():
         # Reading data from the csv file
         image_name_with_extension = row['image']
         label = row['label']
@@ -83,12 +82,10 @@ def load_image(images_path, images_path_save, csv_path, target_res):
         img = cv2.imread(filename)
         height = img.shape[0]
         width = img.shape[1]
-        print('height: ', height)
-        print('width: ', width)
 
         img, xmin, ymin, xmax, ymax = resize_image_and_bounding_box(target_res, img, height, width, xmin, ymin, xmax, ymax)
 
-        cv2.imwrite(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', images_path_save, image_name_with_extension)), img) 
+        cv2.imwrite(images_path_save + image_name_with_extension, img) 
         cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (255, 0, 0), 1)
         
         cv2.startWindowThread()
@@ -121,14 +118,12 @@ def main():
     Rename the path to your dataset format
     '''
     # TODO: Set the source files path
-    images_source_path = 'validacao' # Folter containing the images
-    csv_path = 'validacao/csv/val_dataset.csv'
-    # csv_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..',  csv_source_path)) # the csv file you want to read
+    images_source_path = 'images_teste_3' # Folter containing the images
+    csv_path = 'images_teste_3/Adversarial-teste-3-export.csv'
     
     # TODO: Set the file save path
-    images_path_save = 'validacao_300_300' # Folder that will contain the resized images
-    csv_path_save = 'validacao_300_300/csv/val_dataset.csv'
-    # csv_path_save = os.path.abspath(os.path.join(os.path.dirname( __file__ ), csv_target_path))
+    images_path_save = 'images_teste_3_prev_300_300/' # Folder that will contain the resized images
+    csv_path_save = 'images_teste_3_prev_300_300/csv/train_dataset.csv'
 
     target_resolution = (300, 300)
 
@@ -136,7 +131,7 @@ def main():
 
     if not os.path.exists(images_path_save):
         try:
-            os.makedirs('validacao_300_300/csv') 
+            os.makedirs(images_path_save + 'csv') 
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise   

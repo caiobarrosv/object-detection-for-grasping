@@ -3,7 +3,6 @@ import numpy as np
 import os
 import glob
 import pandas as pd
-from tqdm import tqdm
 import dataset_commons
 
 '''
@@ -17,7 +16,7 @@ def load_images_from_csv(images_path, csv_path):
     train_samples = pd.read_csv(csv_path)
     csv_list = []
 
-    for i, row in tqdm(train_samples.iterrows()):
+    for i, row in train_samples.iterrows():
         # Reading data from the csv file
         image_name_with_extension = row['image']
         label = row['label']
@@ -41,6 +40,16 @@ def load_images_from_csv(images_path, csv_path):
     
 if __name__ == "__main__":
     images_path = dir_files['image_folder']
-    csv_path = dir_files['csv_path']
+    csv_train_path = dir_files['csv_train']
+    csv_val_path = dir_files['csv_validation']
+    
+    a = int(input("Choose to visualize the train.csv file [option: 1] or val.csv file [option: 2]: "))
+
+    if a == 1:
+        csv_path = csv_train_path
+    elif a == 2:
+        csv_path = csv_val_path
+    else:
+        print("Please choose the right option")   
     
     load_images_from_csv(images_path, csv_path)

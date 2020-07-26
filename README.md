@@ -65,10 +65,11 @@ This repository gives you the tools to generate record files (train, validation,
 > All the following scripts may need small modifications in order to fit your data.
 
 - **How to change the file paths in all the files without modifying them individually?**
-  - Please configure the file `config_files/config.json` and `label_map.json` to fit your images and files features and path. You just need to consider the repository folder as a root to reference the paths. The python code takes care of the rest.
+  - Please configure the file `config_files/config.json` to fit your images and files. You just need to configure the relative path.
 
 - **How to organize my images?**
-  - You should create a folder called `images` and put the [dataset images](#3.0) into the folder. (Note: please, put all the images into this folder and **do not divide by class**)
+  - You should create a folder called `images` and put all the [dataset images](#3.0) into this folder. (Note: please, put all the images into this folder and **do not divide by class**). 
+  - If you have a .rec file, just put this file in the `data` folder and configure the path in config.json.
 
 - **How can I check my csv files before generating the lst file (default in MXNet)?**
   - If you want to view the images and the bounding boxes pointed in the csv file, please run the script `utils/view_csv_files.py`.
@@ -76,33 +77,35 @@ This repository gives you the tools to generate record files (train, validation,
 - **Can I modify the images sizes before generating a new lst file?**
   - If you want to resize your images and save these images and a new csv file containing the resized bounding boxes and images sizes in a new folder, please run the script `utils/resize_images_csv.py` 
 
-- **Where to put my csv files?**
-  - You should put your csv file into the `csv` folder.
+- **How is the csv format used in this project?**
   - Your csv file must be in the following format: 
     ```sh 
-    image,xmin,ymin,xmax,ymax,label,height,width
-    000.jpg,463,273,635,450,bar_clamp,756,1008
+    image,xmin,ymin,xmax,ymax,label
+    000.jpg,463,273,635,450,bar_clamp
     ```
 
 - **How to divide my csv file in train/val/test csv files and shuffle them?** 
   - Split your data by using the script `utils/split_data.py`. It will generate train, validation, and test csv files into the `csv` folder.
+  - If you just want to shuffle your data, set the validation or train percentage to 100%.
 
-- **How to generate a lst file for the GluonCV?**
-  - Please use the script `utils/prepate_dataset.py` for generating train/val lst files. The files will be saved in the data folder according to the config.json
+- **How to generate a lst and record file for the GluonCV?**
+  - Please use the script `utils/prepate_dataset.py` for generating train/val lst files and the record files. 
+  - The record files will be saved in the same folder of the lst files.
 
 - **How to generate a record file from a lst file?**
-  - Use the `im2rec.py` script provided in the root folder and type the following command:
-    ```sh
-    python im2rec.py lst_file_name relative_root_to_images --pass-through --pack-label
-    ```
-    
-    Since the images path are included in the lst file when generating the lst file, please set the relative_root_to_images as the root folder [.]
+  - You do not need to run the script below, just use the `utils/prepate_dataset.py` script. It will generate the record files for you automatically. But if you want to use the script that converts the lst files into record files separately, please follow the procedures stated below:
+    - Use the `im2rec.py` script provided in the root folder and type the following command:
+      ```sh
+      python im2rec.py lst_file_name relative_root_to_images --pass-through --pack-label
+      ```
+      
+      Since the images path are included in the lst file when generating the lst file, please set the relative_root_to_images as the root folder [.]
 
-    Example:
-    ```sh
-    python im2rec.py data/train.lst . --pass-through --pack-label
-    python im2rec.py data/val.lst . --pass-through --pack-label
-    ```
+      Example:
+      ```sh
+      python im2rec.py data/train.lst . --pass-through --pack-label
+      python im2rec.py data/val.lst . --pass-through --pack-label
+      ```
     
 - **How can I make sure that my record file was correctly generated?**
   - View your data by using the script `utils/view_record_mxnet.py`. It will plot all the images and the bounding boxes from the record using OpenCV.
@@ -119,7 +122,7 @@ Note that you should create some folders yourself or change the path configurati
 ```bash
 ├───config_files      # Files path configuration
 ├───csv               # CSV files folder
-├───data              # TFRecord folder
+├───data              # Record folder
 ├───etc               # Auxiliary code
 ├───images            # You should create this folder and put your images
 ├───utils             # Codes to manage the dataset
@@ -136,8 +139,8 @@ A bigger dataset is under development.
 
 Bouding box format: xmin, ymin, xmax, ymax
 
-[Dataset 1](https://drive.google.com/file/d/1IrBlQRCX4731ISnXCqnuGpLrakFWPPbB/view?usp=sharing)
-Image resolution: (756, 1008, 3) # (height, width, channel)
+[Dataset 1](https://drive.google.com/file/d/1IrBlQRCX4731ISnXCqnuGpLrakFWPPbB/view?usp=sharing) - Image resolution: (756, 1008, 3) # (height, width, channel)
 
-[Dataset 2](https://drive.google.com/file/d/1zf8WPfhgEjUtlamjo58V3URlfXsPl-U6/view?usp=sharing)
-Image resolution: (300, 300, 3) # (height, width, channel)
+[Dataset 2](https://drive.google.com/file/d/1zf8WPfhgEjUtlamjo58V3URlfXsPl-U6/view?usp=sharing) - Image resolution: (300, 300, 3) # (height, width, channel)
+
+[Dataset - Teste 4](https://drive.google.com/file/d/15L-iOGPgF5al5sHx3rLiIF_F2Hs3iQjd/view?usp=sharing) - Image resolution: (300, 300, 3) # (height, width, channel)

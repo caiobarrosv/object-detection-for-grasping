@@ -201,8 +201,8 @@ class training_network():
             self.net.save_parameters('{:s}_best_epoch_{:04d}_map_{:.4f}.params'.format(prefix, epoch, current_map))
             with open(prefix+'_best_map.log', 'a') as f:
                 f.write('\n{:04d}:\t{:.4f}'.format(epoch, current_map))
-        if save_interval and epoch % save_interval == 0:
-            self.net.save_parameters('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
+        # if save_interval and epoch % save_interval == 0:
+            # self.net.save_parameters('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
 
     def validate(self):
         """Test on validation dataset."""

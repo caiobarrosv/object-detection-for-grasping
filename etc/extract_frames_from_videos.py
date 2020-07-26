@@ -15,7 +15,7 @@ def image_extractor(targetSize, target_folder, source_files):
         target_folder (str) : absolute folder path
         source_files (list) : list of the video's absolute paths
     '''
-    val=0
+    img_number=0
     for file in source_files:
         print(file)
         # Opens the Video file
@@ -25,7 +25,7 @@ def image_extractor(targetSize, target_folder, source_files):
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
         # Number of steps / photos extracted
-        number_of_photos = 8
+        number_of_photos = 20
         step = int(frame_count / number_of_photos)
 
         # print("Number of frames: ", frame_count)
@@ -49,19 +49,19 @@ def image_extractor(targetSize, target_folder, source_files):
                 else:
                     # cv2.imshow('image', frame)
                     frame = cv2.resize(frame, targetSize, interpolation = cv2.INTER_AREA)
-                    cv2.imwrite(target_folder + 'val_' + str(val)+'.jpg', frame)
+                    cv2.imwrite(target_folder + str(img_number)+'.jpg', frame)
                     # print('Position:', int(cap.get(cv2.CAP_PROP_POS_FRAMES)))
-                    val+=1
+                    img_number+=1
 
             i+=1
 
 def main():
     # Set the targetSize
-    target_folder='D:/1. Github/object_detection_for_grasping/validacao/' # do not forget to add '/' at the end
-    source_files = glob.glob("D:/1. Github/object_detection_for_grasping/validacao/videos/*.mp4")
+    target_folder='D:/1. Github/object_detection_for_grasping/images_teste_3/' # do not forget to add '/' at the end
+    source_files = glob.glob("D:/1. Github/object_detection_for_grasping/images_teste_3/videos/*.mp4")
     print('Number of files: ', len(source_files))
 
-    targetSize = (1000, 1000) #  width / height
+    targetSize = (800, 800) #  width / height
     image_extractor(targetSize, target_folder, source_files)
 
 if __name__ == "__main__":

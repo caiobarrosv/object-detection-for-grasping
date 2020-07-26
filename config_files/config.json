@@ -4,18 +4,22 @@
                 "gear_box" : 1
               },
   
-  "checkpoint_folder" : "checkpoints",
+  "Just_for_help" : "---- The files below are the source files ----",
   
-  "image_folder" : "images_augmented",  
-  "csv_path" : "images_augmented/csv/val_dataset.csv",
+  "checkpoint_folder" : "checkpoints",  
+  "image_folder" : "images_teste_4_prev_300_300",
+  "csv_train" : "images_teste_4_prev_300_300/csv/train_dataset.csv",
+  "csv_validation" : "images_teste_4_prev_300_300/csv/val_dataset.csv",
+
+  "Just_for_help_" : "---- The path files below are used only for visualization ----",
+
+  "record_train_path" : "data/teste_4/train_teste_4.rec",
+  "record_val_path": "data/teste_4/val_teste_4.rec",
+
+  "Just_for_help__" : "---- The files below will be generated ----",
+
+  "lst_train_path" : "data/teste_4/train_teste_4.lst",
+  "lst_val_path" : "data/teste_4/val_teste_4.lst"
+
   
-  "csv_train" : "csv/data_train_1600.csv",
-  "csv_validation" : "csv/data_validation.csv",
-  "csv_test" : "csv/data_test.csv",
-  
-  "lst_train_path" : "data/train_1600.lst",
-  "lst_val_path" : "data/val.lst",
-  
-  "record_train_path" : "data/train_1600.rec",
-  "record_val_path": "data/val.rec"
 }

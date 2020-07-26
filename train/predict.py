@@ -13,9 +13,11 @@ import utils.dataset_commons as dataset_commons
 import time
 
 class Detector:
-    def __init__(self, model_path, model='ssd300', ctx='gpu'):
+    def __init__(self, model_path, model='ssd300', ctx='gpu', threshold=0.5, device_id=1):
         self.data_common = dataset_commons.get_dataset_files()
         self.model_path = os.path.join(self.data_common['checkpoint_folder'], model_path)
+        self.threshold = threshold
+        self.device_id = device_id
         
         classes_keys = [key for key in self.data_common['classes']]
         self.classes = classes_keys
@@ -39,6 +41,7 @@ class Detector:
             raise ValueError('Invalid model `{}`.'.format(model.lower()))
         
         net = get_model(model_name, pretrained=False, ctx=self.ctx)
+        net.set_nms(nms_thresh=0.5, nms_topk=2)
         net.hybridize(static_alloc=True, static_shape=True)
         net.initialize(force_reinit=True, ctx=self.ctx)
         print(self.classes)
@@ -46,6 +49,13 @@ class Detector:
         net.load_parameters(self.model_path, ctx=self.ctx)
 		
         self.net = net
+    
+    def filter_predictions(self, bounding_boxes, scores, class_IDs, threshold=0.0):
+        idx = scores.squeeze().asnumpy() > threshold
+        fscores = scores.squeeze().asnumpy()[idx]
+        fids = class_IDs.squeeze().asnumpy()[idx]
+        fbboxes = bounding_boxes.squeeze().asnumpy()[idx]
+        return fbboxes, fscores, fids 
 
     def ssd_val_transform(self, img, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         if isinstance(img, str):
@@ -72,7 +82,8 @@ class Detector:
         
     def detect(self, image, plot=False):
         image = os.path.join(self.data_common['image_folder'], image)
-        image_tensor, image = self.ssd_val_transform(image)
+        # image_tensor, image = self.ssd_val_transform(image)
+        image_tensor, image = gcv.data.transforms.presets.ssd.load_test(image, self.width)
         # x, image = self.transform(image, 300)
         labels, scores, bboxes = self.net(image_tensor.as_in_context(self.ctx))
 
@@ -85,8 +96,10 @@ class Detector:
             self.plot_boxes_and_image()
 
     def detect_webcam(self, NUM_FRAMES=200):
+        threshold = self.threshold
+        device_id = self.device_id
         # Load the webcam handler
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(device_id) # 1 for droid-cam
         time.sleep(1) ### letting the camera autofocus
 
         axes = None
@@ -101,11 +114,19 @@ class Detector:
 
             # Run frame through network
             class_IDs, scores, bounding_boxes = self.net(rgb_nd.as_in_context(self.ctx))
+            
+            # TESTE 1
+            # img = gcv.utils.viz.cv_plot_bbox(frame, bounding_boxes[0], scores[0], class_IDs[0], class_names=self.net.classes)
+            # gcv.utils.viz.cv_plot_image(img)            
 
-            # Display the result
-            img = gcv.utils.viz.cv_plot_bbox(frame, bounding_boxes[0], scores[0], class_IDs[0], class_names=self.net.classes)
-            gcv.utils.viz.cv_plot_image(img)
-            # cv2.waitKey(1)
+            # TESTE 2
+            fbounding_boxes, fscores, fclass_IDs = self.filter_predictions(bounding_boxes, scores, class_IDs, threshold=threshold)
+            print(fclass_IDs.size)
+            if fclass_IDs.size > 0:
+                # Display the result
+                img = gcv.utils.viz.cv_plot_bbox(frame, fbounding_boxes, fscores, fclass_IDs, class_names=self.net.classes)
+                gcv.utils.viz.cv_plot_image(img)
+            
             a = cv2.waitKey(1) # close window when ESC is pressed            
         
         cap.release()
@@ -174,9 +195,9 @@ class Detector:
             
 def main():
     # You just need to pass the filename. The directory is configured in config.json file
-    params = 'ssd_300_vgg16_atrous_voc_best.params'
+    params = 'checkp_best_epoch_0006_map_0.7292.params'
     
-    det = Detector(params, model='ssd300', ctx='gpu')
+    det = Detector(params, model='ssd300', ctx='gpu', threshold=0.95, device_id=1)
 
     # imagem = '315.jpg'    
     # det.detect(imagem, plot=True)
