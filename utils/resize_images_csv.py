@@ -55,7 +55,7 @@ def convert_min_max_to_centroids(xmin, ymin, xmax, ymax):
     h = ymax - ymin # Set h
     return cx, cy, w, h
 
-def load_image(images_path, images_path_save, csv_path, target_res):
+def load_image(images_path, images_path_save, csv_path, target_res, show_images):
     '''
     Load images from disk and save in a new size
 
@@ -88,12 +88,13 @@ def load_image(images_path, images_path_save, csv_path, target_res):
         cv2.imwrite(images_path_save + image_name_with_extension, img) 
         cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (255, 0, 0), 1)
         
-        cv2.startWindowThread()
-        cv2.imshow('img', img)
-        a = cv2.waitKey(200) # close window when ESC is pressed
-        if a == 27:
-            break
-        cv2.destroyWindow('img')
+        if show_images:
+            cv2.startWindowThread()
+            cv2.imshow('img', img)
+            a = cv2.waitKey(200) # close window when ESC is pressed
+            if a == 27:
+                break
+            cv2.destroyWindow('img')
 
         value = (image_name_with_extension,
                  xmin,
@@ -122,20 +123,23 @@ def main():
     csv_path = 'images_teste_3/Adversarial-teste-3-export.csv'
     
     # TODO: Set the file save path
-    images_path_save = 'images_teste_3_prev_300_300/' # Folder that will contain the resized images
-    csv_path_save = 'images_teste_3_prev_300_300/csv/train_dataset.csv'
+    images_path_save = 'images_teste_5_300_300/' # Folder that will contain the resized images
+    csv_path_save = 'images_teste_5_300_300/csv/train_dataset.csv'
 
-    target_resolution = (300, 300)
-
-    csv_converter = load_image(images_source_path, images_path_save, csv_path, target_resolution)
-
-    if not os.path.exists(images_path_save):
+    path = os.path.join(os.getcwd(), images_path_save, 'csv')
+    if not os.path.exists(path):
         try:
-            os.makedirs(images_path_save + 'csv') 
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise   
+            os.makedirs(path) 
+        except OSError:
+            print ("Creation of the directory %s failed" % path)
+        else:
+            print ("Successfully created the directory %s" % path)
     
+    target_resolution = (300, 300)
+    show_images = False
+
+    csv_converter = load_image(images_source_path, images_path_save, csv_path, target_resolution, show_images)
+
     csv_converter.to_csv(csv_path_save, index=None)
     print('Successfully converted to a new csv file.')
 

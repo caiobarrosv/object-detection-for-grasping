@@ -3,23 +3,13 @@
                 "bar_clamp" : 0,
                 "gear_box" : 1
               },
-  
-  "Just_for_help" : "---- The files below are the source files ----",
-  
-  "checkpoint_folder" : "checkpoints",  
-  "image_folder" : "images_teste_4_prev_300_300",
-  "csv_train" : "images_teste_4_prev_300_300/csv/train_dataset.csv",
-  "csv_validation" : "images_teste_4_prev_300_300/csv/val_dataset.csv",
-
-  "Just_for_help_" : "---- The path files below are used only for visualization ----",
-
-  "record_train_path" : "data/teste_4/train_teste_4.rec",
-  "record_val_path": "data/teste_4/val_teste_4.rec",
-
-  "Just_for_help__" : "---- The files below will be generated ----",
-
-  "lst_train_path" : "data/teste_4/train_teste_4.lst",
-  "lst_val_path" : "data/teste_4/val_teste_4.lst"
-
-  
+  "checkpoint_folder" : "logs/teste6_rec_prec",
+  "logs_folder" : "logs/teste6_rec_prec",
+  "image_folder" : "images_teste_5_300_300",
+  "csv_train" : "images_teste_5_300_300/csv/train_dataset.csv",
+  "csv_validation" : "images_teste_5_300_300/csv/val_dataset.csv",
+  "record_train_path" : "data/teste_1/train_320.rec",
+  "record_val_path": "data/teste_1/val_64.rec",
+  "lst_train_path" : "data/teste_5/train_teste_5.lst",
+  "lst_val_path" : "data/teste_5/val_teste_5.lst"  
 }

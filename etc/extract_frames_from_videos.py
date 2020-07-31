@@ -15,7 +15,8 @@ def image_extractor(targetSize, target_folder, source_files):
         target_folder (str) : absolute folder path
         source_files (list) : list of the video's absolute paths
     '''
-    img_number=0
+    source_files = source_files[16:-1]
+    img_number=320
     for file in source_files:
         print(file)
         # Opens the Video file
@@ -50,7 +51,7 @@ def image_extractor(targetSize, target_folder, source_files):
                     # cv2.imshow('image', frame)
                     frame = cv2.resize(frame, targetSize, interpolation = cv2.INTER_AREA)
                     cv2.imwrite(target_folder + str(img_number)+'.jpg', frame)
-                    # print('Position:', int(cap.get(cv2.CAP_PROP_POS_FRAMES)))
+                    print('Position:', int(cap.get(cv2.CAP_PROP_POS_FRAMES)))
                     img_number+=1
 
             i+=1

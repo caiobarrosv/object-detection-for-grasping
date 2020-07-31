@@ -41,7 +41,7 @@ class Detector:
             raise ValueError('Invalid model `{}`.'.format(model.lower()))
         
         net = get_model(model_name, pretrained=False, ctx=self.ctx)
-        net.set_nms(nms_thresh=0.5, nms_topk=2)
+        # net.set_nms(nms_thresh=0.5, nms_topk=2)
         net.hybridize(static_alloc=True, static_shape=True)
         net.initialize(force_reinit=True, ctx=self.ctx)
         print(self.classes)
@@ -50,7 +50,8 @@ class Detector:
 		
         self.net = net
     
-    def filter_predictions(self, bounding_boxes, scores, class_IDs, threshold=0.0):
+    def filter_predictions(self, bounding_boxes, scores, class_IDs):
+        threshold = self.threshold
         idx = scores.squeeze().asnumpy() > threshold
         fscores = scores.squeeze().asnumpy()[idx]
         fids = class_IDs.squeeze().asnumpy()[idx]
@@ -96,7 +97,6 @@ class Detector:
             self.plot_boxes_and_image()
 
     def detect_webcam(self, NUM_FRAMES=200):
-        threshold = self.threshold
         device_id = self.device_id
         # Load the webcam handler
         cap = cv2.VideoCapture(device_id) # 1 for droid-cam
@@ -110,18 +110,14 @@ class Detector:
 
             # Image pre-processing
             frame = mx.nd.array(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).astype('uint8')
-            rgb_nd, frame = gcv.data.transforms.presets.ssd.transform_test(frame, short=300, max_size=700)
+            rgb_nd, frame = gcv.data.transforms.presets.ssd.transform_test(frame, short=self.width, max_size=700)
 
             # Run frame through network
-            class_IDs, scores, bounding_boxes = self.net(rgb_nd.as_in_context(self.ctx))
-            
-            # TESTE 1
-            # img = gcv.utils.viz.cv_plot_bbox(frame, bounding_boxes[0], scores[0], class_IDs[0], class_names=self.net.classes)
-            # gcv.utils.viz.cv_plot_image(img)            
+            class_IDs, scores, bounding_boxes = self.net(rgb_nd.as_in_context(self.ctx))          
 
-            # TESTE 2
-            fbounding_boxes, fscores, fclass_IDs = self.filter_predictions(bounding_boxes, scores, class_IDs, threshold=threshold)
+            fbounding_boxes, fscores, fclass_IDs = self.filter_predictions(bounding_boxes, scores, class_IDs)
             print(fclass_IDs.size)
+            gcv.utils.viz.cv_plot_image(frame)
             if fclass_IDs.size > 0:
                 # Display the result
                 img = gcv.utils.viz.cv_plot_bbox(frame, fbounding_boxes, fscores, fclass_IDs, class_names=self.net.classes)
@@ -194,10 +190,10 @@ class Detector:
         cv2.destroyWindow('image')
             
 def main():
-    # You just need to pass the filename. The directory is configured in config.json file
-    params = 'checkp_best_epoch_0006_map_0.7292.params'
+    # You just need to pass folder name inside the log folder (checkpoints folder configured in config.json)
+    params = 'teste_4/checkp_best_epoch_0003_map_0.9545.params'
     
-    det = Detector(params, model='ssd300', ctx='gpu', threshold=0.95, device_id=1)
+    det = Detector(params, model='ssd300', ctx='gpu', threshold=0.7, device_id=1)
 
     # imagem = '315.jpg'    
     # det.detect(imagem, plot=True)

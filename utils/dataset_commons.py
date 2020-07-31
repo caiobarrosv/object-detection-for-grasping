@@ -10,6 +10,7 @@ def get_dataset_files():
     dir_ = {
         'classes' : config["classes"],
         'checkpoint_folder' : config["checkpoint_folder"],
+        'logs_folder' : config["logs_folder"],
         'image_folder' : config["image_folder"],
         'csv_train' : config["csv_train"],
         'csv_validation' : config["csv_validation"],
