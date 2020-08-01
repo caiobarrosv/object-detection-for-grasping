@@ -140,7 +140,13 @@ A bigger dataset is under development.
 Bouding box format: xmin, ymin, xmax, ymax
 
 [Dataset 1](https://drive.google.com/file/d/1IrBlQRCX4731ISnXCqnuGpLrakFWPPbB/view?usp=sharing) - Image resolution: (756, 1008, 3) # (height, width, channel)
+The train and validation files have 1 classe per image with only 1 type of background
 
-[Dataset 2](https://drive.google.com/file/d/1zf8WPfhgEjUtlamjo58V3URlfXsPl-U6/view?usp=sharing) - Image resolution: (300, 300, 3) # (height, width, channel)
+[Dataset 2](https://drive.google.com/file/d/1zf8WPfhgEjUtlamjo58V3URlfXsPl-U6/view?usp=sharing) (jpg files) - Image resolution: (300, 300, 3) # (height, width, channel)
+The train and validation files have 1 classe per image with only 1 type of background
 
-[Dataset - Teste 4](https://drive.google.com/file/d/15L-iOGPgF5al5sHx3rLiIF_F2Hs3iQjd/view?usp=sharing) - Image resolution: (300, 300, 3) # (height, width, channel)
+[Dataset - Teste 4](https://drive.google.com/file/d/15L-iOGPgF5al5sHx3rLiIF_F2Hs3iQjd/view?usp=sharing) (rec files) - Image resolution: (300, 300, 3) # (height, width, channel) - 320 train / 64 val 
+The train images have all the classes together with the same background as well as the validation files with the same background
+
+[Dataset - Teste 5](https://drive.google.com/file/d/1AT0_UCA-sP9Mt8z-KuPkPSmVKocC84XZ/view?usp=sharing) (rec files) - Image resolution: (300, 300, 3) # (height, width, channel) - 560 train / 64 val
+The train images have all the classes together with different backgrounds as well as the validation files with the same background
