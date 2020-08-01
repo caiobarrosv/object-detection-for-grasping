@@ -146,6 +146,11 @@ Bouding box format: xmin, ymin, xmax, ymax
   - Classes: Bar clamp and gear box
   - In this dataset, the train and validation files have 1 classe per image with only 1 type of background
   - Ground truth: 1 ground truth per image (only 1 part is in the image)
+<p align="center">Example of train and validation image:</p>
+<p align="center">
+<img src="https://user-images.githubusercontent.com/28100951/89105060-65b40900-d3f4-11ea-876a-cac81d3b1ec1.png" width="200"/>
+</p>
+
 
 - [Dataset 2](https://drive.google.com/file/d/1zf8WPfhgEjUtlamjo58V3URlfXsPl-U6/view?usp=sharing) 
   - Image resolution: (300, 300, 3) # (height, width, channel)
@@ -154,6 +159,10 @@ Bouding box format: xmin, ymin, xmax, ymax
   - Classes: Bar clamp and gear box
   - In this dataset, the train and validation files have 1 classe per image with only 1 type of background
   - Ground truth: 1 ground truth per image (only 1 part is in the image)
+<p align="center">Example of train and validation image:</p>
+<p align="center">
+<img src="https://user-images.githubusercontent.com/28100951/89105095-998f2e80-d3f4-11ea-9c0e-3c0dcdc494cf.png" width="190">
+</p>
 
 - [Dataset - Teste 4](https://drive.google.com/file/d/15L-iOGPgF5al5sHx3rLiIF_F2Hs3iQjd/view?usp=sharing) 
   - Image resolution: (300, 300, 3) # (height, width, channel) 
@@ -163,6 +172,15 @@ Bouding box format: xmin, ymin, xmax, ymax
   - Classes: Bar clamp and gear box
   - In this dataset, the train images have all the classes together with the same background as well as the validation files with the same background
   - Ground truths: 2 ground truths per image (all the 8 parts are in the image)
+<p align="center">Example of train image:</p>
+<p align="center"> 
+<img src="https://user-images.githubusercontent.com/28100951/89105110-bfb4ce80-d3f4-11ea-928e-c1606922ee41.png" width="160" title="train image">
+</p>
+<p align="center">Example of validation image:</p>
+<p align="center"> 
+<img src="https://user-images.githubusercontent.com/28100951/89105112-c0e5fb80-d3f4-11ea-9a87-77b326f586b0.png" width="160">
+</p> 
+
 
 - [Dataset - Teste 5](https://drive.google.com/file/d/1AT0_UCA-sP9Mt8z-KuPkPSmVKocC84XZ/view?usp=sharing) 
   - Image resolution: (300, 300, 3) # (height, width, channel)
@@ -172,3 +190,12 @@ Bouding box format: xmin, ymin, xmax, ymax
   - Classes: Bar clamp and gear box
   - The train images have all the classes together with different backgrounds as well as the validation files with the same background
   - Ground truths: 2 ground truths per image (all the 8 parts are in the image)
+<p align="center">Example of train images:</p>
+<p align="center"> 
+<img src="https://user-images.githubusercontent.com/28100951/89105201-77e27700-d3f5-11ea-80e0-b6abbddc7afa.png"  width="400" title="train image">
+</p> 
+
+<p align="center">Example of validation image:</p>
+<p align="center"> 
+<img src="https://user-images.githubusercontent.com/28100951/89105225-bb3ce580-d3f5-11ea-9463-ee16d6c67484.png"  width="100" title="train image">
+</p> 
