@@ -11,15 +11,18 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..')))
 import utils.dataset_commons as dataset_commons
 import time
+import glob
+from matplotlib import pyplot as plt
+
+data_common = dataset_commons.get_dataset_files()
 
 class Detector:
     def __init__(self, model_path, model='ssd300', ctx='gpu', threshold=0.5, device_id=1):
-        self.data_common = dataset_commons.get_dataset_files()
-        self.model_path = os.path.join(self.data_common['checkpoint_folder'], model_path)
+        self.model_path = os.path.join(data_common['checkpoint_folder'], model_path)
         self.threshold = threshold
         self.device_id = device_id
         
-        classes_keys = [key for key in self.data_common['classes']]
+        classes_keys = [key for key in data_common['classes']]
         self.classes = classes_keys
         
         if ctx == 'cpu':
@@ -29,8 +32,11 @@ class Detector:
         else:
             raise ValueError('Invalid context.')
         
-        if model.lower() == 'ssd300':
+        if model.lower() == 'ssd300_vgg16_voc':
             model_name = 'ssd_300_vgg16_atrous_voc' #'ssd_300_vgg16_atrous_coco'
+            self.width, self.height = 300, 300
+        elif model.lower() == 'ssd300_vgg16_coco':
+            model_name = 'ssd_300_vgg16_atrous_coco'
             self.width, self.height = 300, 300
         elif (model.lower() == 'frcnn'):
             model_name = 'faster_rcnn_resnet50_v1b_coco'
@@ -82,24 +88,17 @@ class Detector:
         return tensors, origs
         
     def detect(self, image, plot=False):
-        image = os.path.join(self.data_common['image_folder'], image)
         # image_tensor, image = self.ssd_val_transform(image)
         image_tensor, image = gcv.data.transforms.presets.ssd.load_test(image, self.width)
         # x, image = self.transform(image, 300)
         labels, scores, bboxes = self.net(image_tensor.as_in_context(self.ctx))
-
-        self.labels = labels
-        self.scores = scores
-        self.bboxes = bboxes
-        self.image = image
-
         if plot:
-            self.plot_boxes_and_image()
+            ax = viz.plot_bbox(image, bboxes[0], scores[0], labels[0], class_names=self.net.classes)
+            plt.show()
 
-    def detect_webcam(self, NUM_FRAMES=200):
-        device_id = self.device_id
+    def detect_webcam_video(self, video_font):
         # Load the webcam handler
-        cap = cv2.VideoCapture(device_id) # 1 for droid-cam
+        cap = cv2.VideoCapture(video_font) # 1 for droid-cam
         time.sleep(1) ### letting the camera autofocus
 
         axes = None
@@ -116,7 +115,6 @@ class Detector:
             class_IDs, scores, bounding_boxes = self.net(rgb_nd.as_in_context(self.ctx))          
 
             fbounding_boxes, fscores, fclass_IDs = self.filter_predictions(bounding_boxes, scores, class_IDs)
-            print(fclass_IDs.size)
             gcv.utils.viz.cv_plot_image(frame)
             if fclass_IDs.size > 0:
                 # Display the result
@@ -128,79 +126,28 @@ class Detector:
         cap.release()
         cv2.destroyAllWindows()
 
-    def plot_boxes_and_image(self, absolute_coordinates=True, thresh=0.5):
-        """
-        Visualize bounding boxes and the image. This code is a modified version of the 
-        original code provided by GluonCV. Please refers to GluonCV repo/website fore more info
-
-        Argument:
-            absolute_coordinates (bool): If `True`, absolute coordinates will be considered, otherwise coordinates
-                are interpreted as in range(0, 1).
-            thresh (float, optional, default 0.5): Display threshold if `scores` is provided. Scores with less 
-                than `thresh` will be ignored in display, this is visually more elegant if you have
-                a large number of bounding boxes with very small scores.
-        """
-        bboxes = self.bboxes # Shape (1, Boxes,  4) - 4 refers to each xmin, ymin, xmax, ymax
-        scores = self.scores # Shape (1, Scores, 1)
-        labels = self.labels # Shape (1, Labels, 1)
-        image = self.image
-
-        if isinstance(bboxes, mx.nd.NDArray):
-            bboxes = bboxes.asnumpy()
-        if isinstance(labels, mx.nd.NDArray):
-            labels = labels.asnumpy()
-        if isinstance(scores, mx.nd.NDArray):
-            scores = scores.asnumpy()
-        
-        if not absolute_coordinates:
-            # convert to absolute coordinates using image shape
-            height = image.shape[0]
-            width = image.shape[1]
-            bboxes[:, (0, 2)] *= width
-            bboxes[:, (1, 3)] *= height
-        
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR) # OpenCV uses BGR order
-        
-        for i, bbox in enumerate(bboxes[0]):
-            if scores is not None and scores.flat[i] < thresh:
-                continue
-            if labels is not None and labels.flat[i] < 0:
-                continue
-        
-            cls_id = int(labels.flat[i]) if labels is not None else -1
-            
-            xmin, ymin, xmax, ymax = [int(x) for x in bbox]
-
-            if labels is not None and cls_id < len(labels):
-                class_name = self.classes[cls_id]
-            else:
-                class_name = str(cls_id) if cls_id >= 0 else ''
-            
-            score = '{:.3f}'.format(scores.flat[i]) if scores is not None else ''
-
-            if class_name or score:
-                cv2.startWindowThread()
-                image = cv2.putText(image, class_name + ': ' + score, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0))
-                image = cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (255, 0, 0), 1)
-                # h, w, _ = image.shape
-                # bbox = tbbox.resize(bbox, in_size=(h, w), out_size=(self.width, self.height))
-        
-        cv2.imshow('image', image)
-        a = cv2.waitKey(0) # close window when ESC is pressed
-        cv2.destroyWindow('image')
-            
 def main():
-    # You just need to pass folder name inside the log folder (checkpoints folder configured in config.json)
-    params = 'teste_4/checkp_best_epoch_0003_map_0.9545.params'
+    # TODO: You just need to pass the param name inside the log folder (checkpoints folder configured in config.json)
+    params = 'ssd_300_vgg16_coco_dataset_5_epoch_0059_map_1.0000_loss_1.0.params'
     
-    det = Detector(params, model='ssd300', ctx='gpu', threshold=0.7, device_id=1)
+    det = Detector(params, model='ssd300_vgg16_coco', ctx='gpu', threshold=0.1, device_id=1)
 
-    # imagem = '315.jpg'    
-    # det.detect(imagem, plot=True)
-
-    number_of_frames = 200
-    det.detect_webcam(number_of_frames)
-
+    print("\nPlease configure the video/images files path in config.json before running the next command.")    
+    a = int(input("Choose to inferring by using: \n[option: 1] - Images \n[option: 2] - Videos \n[option: 3] - Webcam\nOption: "))
+    
+    if a == 1:
+        images = glob.glob(data_common['image_folder'] + "/" + "*.jpg")
+        for image in images:
+            det.detect(image, plot=True)
+    elif a == 2:
+        file_name = str(input("Write the video file name with the extension (!!) that is inside the video folder configured in the config.json file: "))
+        file_name = glob.glob(data_common['video_folder'] + "/" + file_name)[0]
+        det.detect_webcam_video(file_name)
+    elif a == 3:
+        device_id = int(input("Choose the device id to connect (default: 0): "))
+        det.detect_webcam_video(device_id)
+    else:
+        print("Please choose the right option")
 
 if __name__ == "__main__":
     main()

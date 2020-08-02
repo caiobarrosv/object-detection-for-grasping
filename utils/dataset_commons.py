@@ -12,6 +12,7 @@ def get_dataset_files():
         'checkpoint_folder' : config["checkpoint_folder"],
         'logs_folder' : config["logs_folder"],
         'image_folder' : config["image_folder"],
+        'video_folder' : config["video_folder"],
         'csv_train' : config["csv_train"],
         'csv_validation' : config["csv_validation"],
         'lst_train_path' : config["lst_train_path"],
