@@ -184,7 +184,7 @@ Bouding box format: xmin, ymin, xmax, ymax
 
 - [Dataset - Teste 5](https://drive.google.com/file/d/1AT0_UCA-sP9Mt8z-KuPkPSmVKocC84XZ/view?usp=sharing) 
   - Image resolution: (300, 300, 3) # (height, width, channel)
-  - Type of files: .rec
+  - Type of the files: .rec
   - Training images: 560 train
   - Validation images: 64 val
   - Classes: Bar clamp and gear box
@@ -202,7 +202,7 @@ Bouding box format: xmin, ymin, xmax, ymax
 
 - [Dataset - Teste 6](https://drive.google.com/file/d/1dEAJj7fm_lxxrBl0w8gEeSOg3AHCHxZ0/view?usp=sharing) 
   - Image resolution: (300, 300, 3) # (height, width, channel)
-  - Type of files: .rec
+  - Type of the files: .rec
   - Training images: 500 train
   - Validation images: 124 val
   - Classes: Bar clamp and gear box
@@ -222,4 +222,15 @@ Bouding box format: xmin, ymin, xmax, ymax
 <p align="center">Example of validation images:</p>
 <p align="center"> 
 <img src="https://user-images.githubusercontent.com/28100951/89105917-b713c680-d3fb-11ea-9d31-6d402c875b6d.png"  width="180" title="train image">
+</p> 
+
+- [Video files for teste - 1, 2, 3 and 4](https://drive.google.com/file/d/1pSBK4ZSbuQ6eEz-dKDKgM2LBzYU0E8Tb/view?usp=sharing) 
+  - Video resolution: (1440, 1440, 3) # (height, width, channel)
+  - Type of the files: .mp4
+  - Videos: 4 files
+  - Classes: All classes together
+
+<p align="center">Screenshot of one of the videos:</p>
+<p align="center"> 
+<img src="https://user-images.githubusercontent.com/28100951/89115443-9fb9f500-d45e-11ea-8ffb-e6fd14ac070c.png"  width="150" title="train image">
 </p> 

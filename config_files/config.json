@@ -3,13 +3,14 @@
                 "bar_clamp" : 0,
                 "gear_box" : 1
               },
-  "checkpoint_folder" : "logs/teste6_rec_prec",
+  "checkpoint_folder" : "logs/teste_5_ssd300_vgg16_coco",
   "logs_folder" : "logs/teste6_rec_prec",
-  "image_folder" : "images_teste_5_300_300",
-  "csv_train" : "images_teste_5_300_300/csv/train_dataset.csv",
-  "csv_validation" : "images_teste_5_300_300/csv/val_dataset.csv",
-  "record_train_path" : "data/teste_1/train_320.rec",
-  "record_val_path": "data/teste_1/val_64.rec",
-  "lst_train_path" : "data/teste_5/train_teste_5.lst",
-  "lst_val_path" : "data/teste_5/val_teste_5.lst"  
+  "image_folder" : "datasets_imagens/images_teste_5_300_300",
+  "video_folder" : "datasets_videos",
+  "csv_train" : "datasets_imagens/images_teste_5_300_300/csv/train_dataset.csv",
+  "csv_validation" : "datasets_imagens/images_teste_5_300_300/csv/val_dataset.csv",
+  "record_train_path" : "data/teste_6/train_teste_6.rec",
+  "record_val_path": "data/teste_6/val_teste_6.rec",
+  "lst_train_path" : "data/teste_6/train_teste_6.lst",
+  "lst_val_path" : "data/teste_6/val_teste_6.lst"  
 }
