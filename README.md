@@ -224,7 +224,7 @@ Bouding box format: xmin, ymin, xmax, ymax
 <img src="https://user-images.githubusercontent.com/28100951/89105917-b713c680-d3fb-11ea-9d31-6d402c875b6d.png"  width="180" title="train image">
 </p> 
 
-- [Video files for teste - 1, 2, 3 and 4](https://drive.google.com/file/d/1pSBK4ZSbuQ6eEz-dKDKgM2LBzYU0E8Tb/view?usp=sharing) 
+- [Video files for test - 1, 2, 3 and 4](https://drive.google.com/file/d/1pSBK4ZSbuQ6eEz-dKDKgM2LBzYU0E8Tb/view?usp=sharing) 
   - Video resolution: (1440, 1440, 3) # (height, width, channel)
   - Type of the files: .mp4
   - Videos: 4 files
