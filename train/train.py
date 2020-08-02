@@ -173,7 +173,6 @@ class training_network():
         self.net.summary(mx.nd.ones((1, 3, self.height, self.width)))
 
     def get_dataloader(self):
-        batch_size, num_workers = self.batch_size, self.num_workers
         width, height = self.width, self.height
         train_dataset = self.train_dataset
         val_dataset = self.val_dataset
@@ -254,6 +253,7 @@ class training_network():
         prec_by_class = [0] * len(self.classes)
 
         for batch in val_data:
+            batch_size = batch[0].shape[0]
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
             label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
             
