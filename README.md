@@ -199,3 +199,27 @@ Bouding box format: xmin, ymin, xmax, ymax
 <p align="center"> 
 <img src="https://user-images.githubusercontent.com/28100951/89105225-bb3ce580-d3f5-11ea-9463-ee16d6c67484.png"  width="100" title="train image">
 </p> 
+
+- [Dataset - Teste 6](https://drive.google.com/file/d/1dEAJj7fm_lxxrBl0w8gEeSOg3AHCHxZ0/view?usp=sharing) 
+  - Image resolution: (300, 300, 3) # (height, width, channel)
+  - Type of files: .rec
+  - Training images: 500 train
+  - Validation images: 124 val
+  - Classes: Bar clamp and gear box
+  - The train images have all the classes together with different backgrounds 
+    - Ground truths: 2 ground truths per image (all the 8 parts are in the image)
+  - The validation files also have different backgrounds. 
+    - Ground truths: 1 ground truths in the images like the left image
+    - Ground truths: 2 ground truths per image in the images like the right image
+  - Remember to set the post_nms to be equal the max number of classes of the validation dataset. In this dataset, we can have 2 classes by image:
+    - `self.net.set_nms(nms_thresh=nms_threshold, nms_topk=200, post_nms=2)`
+  
+<p align="center">Example of train images:</p>
+<p align="center"> 
+<img src="https://user-images.githubusercontent.com/28100951/89105914-b5e29980-d3fb-11ea-8758-067881325f70.png"  width="300" title="train image">
+</p> 
+
+<p align="center">Example of validation images:</p>
+<p align="center"> 
+<img src="https://user-images.githubusercontent.com/28100951/89105917-b713c680-d3fb-11ea-9d31-6d402c875b6d.png"  width="180" title="train image">
+</p> 

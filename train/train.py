@@ -43,6 +43,7 @@ The models used in this project:
         4) faster_rcnn_resnet50_v1b_coco 
         5) yolo3_darknet53_coco 
 '''
+
 data_common = dataset_commons.get_dataset_files()
 
 class training_network():
@@ -157,15 +158,15 @@ class training_network():
             self.train_dataset = gdata.RecordFileDetection(self.train_file)
             self.val_dataset = gdata.RecordFileDetection(self.val_file)
             self.val_metric = VOC07MApMetric(iou_thresh=validation_threshold, class_names=self.net.classes)
-        # elif dataset.lower() == 'coco':
-        #     self.train_dataset = gdata.COCODetection(splits='instances_train2017')
-        #     self.val_dataset = gdata.COCODetection(splits='instances_val2017', skip_empty=False)
-        #     self.val_metric = COCODetectionMetric(
-        #         val_dataset, save_prefix + '_eval', cleanup=True,
-        #         data_shape=(args.data_shape, args.data_shape))
-        #     # coco validation is slow, consider increase the validation interval
-        #     if args.val_interval == 1:
-        #         args.val_interval = 10
+        elif dataset.lower() == 'coco':
+            self.train_dataset = gdata.COCODetection(splits='instances_train2017')
+            self.val_dataset = gdata.COCODetection(splits='instances_val2017', skip_empty=False)
+            self.val_metric = COCODetectionMetric(
+                val_dataset, save_prefix + '_eval', cleanup=True,
+                data_shape=(args.data_shape, args.data_shape))
+            # coco validation is slow, consider increase the validation interval
+            if args.val_interval == 1:
+                args.val_interval = 10
         else:
             raise NotImplementedError('Dataset: {} not implemented.'.format(dataset))
 
@@ -207,13 +208,10 @@ class training_network():
             # self.net.save_parameters('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
 
     def show_images(self, i, data, gt_bboxes, det_bboxes, current_gt_class_id, current_pred_class_id):
-        # In case you want to show the images in the validation dataset
-        #     uncomment the following lines
-        # for img in range(0, 4):
-        gt_bbox = gt_bboxes[0][i][0].asnumpy()
-        xmin_gt, ymin_gt, xmax_gt, ymax_gt = [int(x) for x in gt_bbox]
-        pred_bbox = det_bboxes[0][i][0].asnumpy()
-        xmin_pred, ymin_pred, xmax_pred, ymax_pred = [int(x) for x in pred_bbox]
+        gt_bboxes = gt_bboxes.asnumpy()
+        det_bboxes = det_bboxes.asnumpy()
+        xmin_gt, ymin_gt, xmax_gt, ymax_gt = [int(x) for x in gt_bboxes]
+        xmin_pred, ymin_pred, xmax_pred, ymax_pred = [int(x) for x in det_bboxes]
         img = data[0][i]
         img = img.transpose((1, 2, 0))  # Move channel to the last dimension
         # img = img.asnumpy().astype('uint8') # convert to numpy array
@@ -221,16 +219,8 @@ class training_network():
         img = img.asnumpy()
         img = img.astype(np.uint8)
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR) # OpenCV uses BGR orde
-        if current_gt_class_id == 0:
-            cv2.rectangle(img, (xmin_gt, ymin_gt), (xmax_gt, ymax_gt), (255, 0, 0), 1)
-        else:
-            cv2.rectangle(img, (xmin_gt, ymin_gt), (xmax_gt, ymax_gt), (0, 255, 0), 1)
-        
-        if current_pred_class_id == 0:
-            cv2.rectangle(img, (xmin_pred, ymin_pred), (xmax_pred, ymax_pred), (255, 0, 0), 1)
-        else:
-            cv2.rectangle(img, (xmin_pred, ymin_pred), (xmax_pred, ymax_pred), (0, 255, 0), 1)
-
+        cv2.rectangle(img, (xmin_gt, ymin_gt), (xmax_gt, ymax_gt), (255, 0, 0), 1)
+        cv2.rectangle(img, (xmin_pred, ymin_pred), (xmax_pred, ymax_pred), (0, 255, 0), 1)
         cv2.startWindowThread()
         cv2.imshow('img', img)
         cv2.waitKey(5000)
@@ -247,7 +237,7 @@ class training_network():
         val_metric.reset()
         # set nms threshold and topk constraint
         # post_nms = maximum number of objects per image
-        self.net.set_nms(nms_thresh=nms_threshold, nms_topk=200, post_nms=1) # default: iou=0.45 e topk=400
+        self.net.set_nms(nms_thresh=nms_threshold, nms_topk=200, post_nms=len(self.classes)) # default: iou=0.45 e topk=400
 
         # allow the MXNet engine to perform graph optimization for best performance.
         self.net.hybridize(static_alloc=True, static_shape=True)
@@ -287,31 +277,33 @@ class training_network():
                 gt_bboxes.append(y.slice_axis(axis=-1, begin=0, end=4))
                 # gt_difficults.append(y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None)
 
-            # Get Micro Averaging (precision and recall by each class)
-            for i in range(0, len(gt_bboxes[0])):
-                # retorna o IoU para cada um dos 4 bounding boxes (já que o batch é 4)
-                iou = bbox_iou(det_bboxes[0][i].asnumpy(), gt_bboxes[0][i].asnumpy())
-                # id of each one of the gt_ids
-                current_gt_class_id = int(gt_ids[0][i][0].asnumpy()[0])
-                current_pred_class_id = int(det_ids[0][i][0].asnumpy()[0])
-
-                # If you want to plot the images in each inference to check the tp, fp and fn, uncomment the following line
-                # self.show_images(i, data, gt_bboxes, det_bboxes, current_gt_class_id, current_pred_class_id)
+            # Get Micro Averaging (precision and recall by each class) in each batch
+            for img in range(len(gt_bboxes[0])):
+                iou = bbox_iou(det_bboxes[0][img].asnumpy(), gt_bboxes[0][img].asnumpy())
                 
-                # count +1 for this class id. It will get the total number of gt by class
-                # It is useful when considering unbalanced datasets
-                gt_by_class[current_gt_class_id] += 1
+                for bbox in range(len(gt_bboxes[0][img])):
+                    iou_by_bbox = iou[bbox][bbox]
+                    current_gt_class_id = int(gt_ids[0][img][bbox].asnumpy()[0])
+                    current_pred_class_id = int(det_ids[0][img][bbox].asnumpy()[0])
 
-                # Check if IoU is above the threshold and the class id corresponds to the ground truth
-                if (iou > validation_threshold) and (current_gt_class_id == current_pred_class_id):
-                    tp[current_gt_class_id] += 1
-                else:
-                    fp[current_pred_class_id] += 1
-                    fn[current_gt_class_id] += 1
+                    # Uncomment the following line if you want to plot the images in each inference to visually  check the tp, fp and fn 
+                    # self.show_images(img, data, gt_bboxes[0][img][bbox], det_bboxes[0][img][bbox], current_gt_class_id, current_pred_class_id)
+                    
+                    # count +1 for this class id. It will get the total number of gt by class
+                    # It is useful when considering unbalanced datasets
+                    gt_by_class[current_gt_class_id] += 1
+
+                    # Check if IoU is above the threshold and the class id corresponds to the ground truth
+                    if (iou_by_bbox > validation_threshold) and (current_gt_class_id == current_pred_class_id):
+                        tp[current_gt_class_id] += 1 # Correct classification
+                    else:
+                        fp[current_pred_class_id] += 1  # Wrong classification
+                        fn[current_gt_class_id] += 1 # Did not classify
 
             # update metric
             val_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids) #, gt_difficults)
 
+        # calculate the Recall and Precision by class
         tp = np.array(tp)
         fp = np.array(fp)
         # rec and prec according to the micro averaging
@@ -323,7 +315,7 @@ class training_network():
             with np.errstate(divide='ignore', invalid='ignore'):
                 prec_by_class[i] += tp[i]/(tp[i]+fp[i])
 
-        # rec, prec = val_metric._recall_prec()
+        rec, prec = val_metric._recall_prec()
         return val_metric.get(), rec_by_class, prec_by_class
 
     def train(self):
@@ -465,12 +457,12 @@ class training_network():
                     val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
 
                     for i, class_name in enumerate(self.classes):
-                        sw.add_scalar('rec_by_class', (class_name+'_rec', rec_by_class[i]), epoch)
-                        sw.add_scalar('prec_by_class', (class_name+'_prec', prec_by_class[i]), epoch)
+                        sw.add_scalar('rec_by_class_val', (class_name + '_rec', rec_by_class[i]), epoch)
+                        sw.add_scalar('prec_by_class_val', (class_name + '_prec', prec_by_class[i]), epoch)
 
                     sw.add_scalar('mean_map_and_sum_loss', ('mean_map', mean_ap[-1]), epoch)
                     for k, v in zip(map_name, mean_ap):
-                        sw.add_scalar('map', (k, v), epoch)
+                        sw.add_scalar('map_val', (k, v), epoch)
                     
                     logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
                     current_map = float(mean_ap[-1])
