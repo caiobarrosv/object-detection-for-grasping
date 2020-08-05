@@ -16,20 +16,30 @@ def load_images_from_csv(images_path, csv_path):
     train_samples = pd.read_csv(csv_path)
     csv_list = []
 
-    for i, row in train_samples.iterrows():
-        # Reading data from the csv file
-        image_name_with_extension = row['image']
-        label = row['label']
-        xmin = int(row['xmin'])
-        ymin = int(row['ymin'])
-        xmax = int(row['xmax'])
-        ymax = int(row['ymax'])
+    train_samples = train_samples.groupby('image')
+
+    for name, group in train_samples:
+        all_boxes, all_class_names, all_images_paths = [], [], []
+        for i, row in group.iterrows():
+            image_name_with_extension = row['image']
+            label = row['label']
+            xmin = row['xmin'] 
+            ymin = row['ymin'] 
+            xmax = row['xmax'] 
+            ymax = row['ymax']
+
+            img_path = os.path.join(images_path, image_name_with_extension)  
+            all_images_paths.append(img_path)
+            all_boxes.append([xmin, ymin, xmax, ymax])
+            all_class_names.extend([label])   
 
         filename = glob.glob(images_path + "/" + image_name_with_extension)[0]
         img = cv2.imread(filename)
 
-        cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (255, 0, 0), 1)
-        cv2.putText(img, 'label: ' + str(label), (xmin, ymin-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0))
+        for i, bbox in enumerate(all_boxes):
+            bbox = [int(x) for x in bbox]
+            cv2.rectangle(img, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (255, 0, 0), 1)
+            cv2.putText(img, str(all_class_names[i]), (bbox[0], bbox[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0))
 
         cv2.startWindowThread()
         cv2.imshow('img', img)

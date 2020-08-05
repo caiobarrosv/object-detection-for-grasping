@@ -3,14 +3,14 @@
                 "bar_clamp" : 0,
                 "gear_box" : 1
               },
-  "checkpoint_folder" : "logs/teste_5_ssd300_vgg16_coco",
-  "logs_folder" : "logs/teste6_rec_prec",
-  "image_folder" : "datasets_imagens/images_teste_5_300_300",
+  "checkpoint_folder" : "logs/teste_4",
+  "logs_folder" : "logs/teste_6_ssd300_vgg16_voc_x1_pc",
+  "image_folder" : "datasets_imagens/teste_6_train",
   "video_folder" : "datasets_videos",
-  "csv_train" : "datasets_imagens/images_teste_5_300_300/csv/train_dataset.csv",
-  "csv_validation" : "datasets_imagens/images_teste_5_300_300/csv/val_dataset.csv",
-  "record_train_path" : "data/teste_6/train_teste_6.rec",
-  "record_val_path": "data/teste_6/val_teste_6.rec",
-  "lst_train_path" : "data/teste_6/train_teste_6.lst",
-  "lst_val_path" : "data/teste_6/val_teste_6.lst"  
+  "csv_train" : "datasets_imagens/teste_6_train/csv_files/vott-csv-export/train_dataset.csv",
+  "csv_validation" : "datasets_imagens/teste_6_validation/csv/val_dataset.csv",
+  "record_train_path" : "data/teste_7/train_teste_7.rec",
+  "record_val_path": "data/teste_7/val_teste_7.rec",
+  "lst_train_path" : "data/teste_7/train_teste_7.lst",
+  "lst_val_path" : "data/teste_7/val_teste_7.lst"  
 }
