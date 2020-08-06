@@ -235,8 +235,8 @@ Bouding box format: xmin, ymin, xmax, ymax
   - Validation images: 124 val
   - Classes: Bar clamp, gear box, vase, part_1, part_3, nozzle, pawn, and turbine_housing
   - The train and validation images have the ground truths for all the classes
-  - Remember to set the post_nms to be equal the max number of classes of the validation dataset. In this dataset, we can have 2 classes by image:
-    - `self.net.set_nms(nms_thresh=nms_threshold, nms_topk=200, post_nms=2)`
+  - Remember to set the post_nms to be equal the max number of classes of the validation dataset. In this dataset, we can have 8 classes by image:
+    - `self.net.set_nms(nms_thresh=nms_threshold, nms_topk=200, post_nms=8)`
   - Obs.: The only difference between dataset 7 and dataset 6 is that the dataset 7 contains the ground truths for all the classes 
 
 - [Video files for test - 1, 2, 3 and 4](https://drive.google.com/file/d/1pSBK4ZSbuQ6eEz-dKDKgM2LBzYU0E8Tb/view?usp=sharing) 
