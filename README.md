@@ -224,6 +224,21 @@ Bouding box format: xmin, ymin, xmax, ymax
 <img src="https://user-images.githubusercontent.com/28100951/89105917-b713c680-d3fb-11ea-9d31-6d402c875b6d.png"  width="180" title="train image">
 </p> 
 
+- Dataset - Teste 7
+  - Train and validation images (real size): https://drive.google.com/file/d/1a1JFObOwLAc2mb7jvIjkpynpfAwzaeV7/view?usp=sharing
+    - Image resolution: Some images are (800, 800, 3) # (height, width, channel) and others (1000, 1000, 3) # (height, width, channel)
+    - Type of the files: .rec
+  - Train and validation images (resized): https://drive.google.com/file/d/1a1JFObOwLAc2mb7jvIjkpynpfAwzaeV7/view?usp=sharing
+    - Image resolution: (300, 300, 3) # (height, width, channel)
+    - Type of the files: .rec
+  - Training images: 500 train
+  - Validation images: 124 val
+  - Classes: Bar clamp, gear box, vase, part_1, part_3, nozzle, pawn, and turbine_housing
+  - The train and validation images have the ground truths for all the classes
+  - Remember to set the post_nms to be equal the max number of classes of the validation dataset. In this dataset, we can have 2 classes by image:
+    - `self.net.set_nms(nms_thresh=nms_threshold, nms_topk=200, post_nms=2)`
+  - Obs.: The only difference between dataset 7 and dataset 6 is that the dataset 7 contains the ground truths for all the classes 
+
 - [Video files for test - 1, 2, 3 and 4](https://drive.google.com/file/d/1pSBK4ZSbuQ6eEz-dKDKgM2LBzYU0E8Tb/view?usp=sharing) 
   - Video resolution: (1440, 1440, 3) # (height, width, channel)
   - Type of the files: .mp4
