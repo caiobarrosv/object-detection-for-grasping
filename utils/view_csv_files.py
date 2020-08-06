@@ -28,12 +28,14 @@ def load_images_from_csv(images_path, csv_path):
             xmax = row['xmax'] 
             ymax = row['ymax']
 
+            
             img_path = os.path.join(images_path, image_name_with_extension)  
             all_images_paths.append(img_path)
             all_boxes.append([xmin, ymin, xmax, ymax])
             all_class_names.extend([label])   
 
         filename = glob.glob(images_path + "/" + image_name_with_extension)[0]
+        print("Filename: ", filename)
         img = cv2.imread(filename)
 
         for i, bbox in enumerate(all_boxes):
@@ -49,7 +51,8 @@ def load_images_from_csv(images_path, csv_path):
         cv2.destroyWindow('img')
     
 if __name__ == "__main__":
-    images_path = dir_files['image_folder']
+    images_train_path = dir_files['image_folder']
+    images_val_path = dir_files['image_val_folder']
     csv_train_path = dir_files['csv_train']
     csv_val_path = dir_files['csv_validation']
     
@@ -57,8 +60,10 @@ if __name__ == "__main__":
 
     if a == 1:
         csv_path = csv_train_path
+        images_path = images_train_path
     elif a == 2:
         csv_path = csv_val_path
+        images_path = images_val_path
     else:
         print("Please choose the right option")   
     

@@ -6,6 +6,7 @@ import dataset_commons
 data_common = dataset_commons.get_dataset_files()
 record_train_path = data_common['record_train_path']
 record_val_path = data_common['record_val_path']
+classes_keys = [key for key in data_common['classes']]
 
 def check_record_file(record_path):
     '''
@@ -17,8 +18,9 @@ def check_record_file(record_path):
     record_file = recordio.detection.RecordFileDetection(record_path)
     for img, labels in record_file: 
         for label in labels:
-            [xmin, ymin, xmax, ymax] = label[0:-1]
-            class_id = label[-1]
+            [xmin, ymin, xmax, ymax] = [int(label) for label in label[0:-1]]
+            class_id = int(label[-1])
+            class_name = classes_keys[class_id]
 
             if not isinstance(img, np.ndarray):
                 img = img.asnumpy()
@@ -26,7 +28,7 @@ def check_record_file(record_path):
                 img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR) # OpenCV uses BGR order
 
             cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (255, 0, 0), 1)
-            cv2.putText(img, 'label: ' + str(class_id), (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0))
+            cv2.putText(img, class_name, (xmin, ymin - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0))
 
             cv2.startWindowThread()
         
