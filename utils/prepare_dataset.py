@@ -69,14 +69,10 @@ def save_rec_from_csv(img_path, csv_path, lst_paths, h, w, resize_images):
             all_ids = np.array(all_ids)
             labels = np.hstack((all_ids.reshape(-1, 1), all_boxes)).astype('float')
                 
-            if not resize_images:
-                filename = glob.glob(img_path_)[0]
-                img = cv2.imread(filename)
-                labels[:, (1, 3)] /= float(img.shape[1]) # width
-                labels[:, (2, 4)] /= float(img.shape[0]) # height
-            else:
-                labels[:, (1, 3)] /= float(w)
-                labels[:, (2, 4)] /= float(h)
+            filename = glob.glob(img_path_)[0]
+            img = cv2.imread(filename)
+            labels[:, (1, 3)] /= float(img.shape[1]) # width
+            labels[:, (2, 4)] /= float(img.shape[0]) # height
 
             A = 4 # length of header
             B = 5 # length of label for each object, usually 5
@@ -118,13 +114,22 @@ def main():
 
     print("\n Generating the train record file. Please wait...")
 
-    os.system('python im2rec.py ' + lst_train_path + ' . --pass-through --pack-label')
-    print("\n Successfully generated the record files for training")
+    if not resize_images:
+        os.system('python im2rec.py ' + lst_train_path + ' . --pass-through --pack-label')
+        print("\n Successfully generated the record files for training")
 
-    print("\n Generating the validation record file. Please wait...")
+        print("\n Generating the validation record file. Please wait...")
 
-    os.system('python im2rec.py ' + lst_val_path + ' . --pass-through --pack-label')
-    print("\n Successfully generated the record files for validation")
+        os.system('python im2rec.py ' + lst_val_path + ' . --pass-through --pack-label')
+        print("\n Successfully generated the record files for validation")
+    else:
+        os.system('python im2rec.py ' + lst_train_path + ' . --resize ' + str(width) + ' --pack-label')
+        print("\n Successfully generated the record files for training")
+
+        print("\n Generating the validation record file. Please wait...")
+
+        os.system('python im2rec.py ' + lst_val_path + ' . --resize ' + str(width) + ' --pack-label')
+        print("\n Successfully generated the record files for validation")
 
 if __name__ == "__main__":
     main()
