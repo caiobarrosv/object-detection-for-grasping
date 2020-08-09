@@ -225,10 +225,10 @@ Bouding box format: xmin, ymin, xmax, ymax
 </p> 
 
 - Dataset - Teste 7
-  - Train and validation images (real size): [[Download](https://drive.google.com/file/d/1Lr2TizmnY7EtfsFx9hxU6IC_ro1wxaWL/view?usp=sharing)]
+  - Train and validation images (real size): [Will be available soon]
     - Image resolution: Some images are (800, 800, 3) # (height, width, channel) and others (1000, 1000, 3) # (height, width, channel)
     - Type of the files: .rec
-  - Train and validation images (resized): [[Download](https://drive.google.com/file/d/1pIWH2irwiZ0fuNzQMFcNh0P4MqW411Cz/view?usp=sharing)]
+  - Train and validation images (resized): [[Download](https://drive.google.com/file/d/13MDJLE0F4SRnsrlE3S-HKfW8FtK1BtJS/view?usp=sharing)]
     - Image resolution: (300, 300, 3) # (height, width, channel)
     - Type of the files: .rec
   - Training images: 500 train
