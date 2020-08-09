@@ -28,7 +28,6 @@ def load_images_from_csv(images_path, csv_path):
             xmax = row['xmax'] 
             ymax = row['ymax']
 
-            
             img_path = os.path.join(images_path, image_name_with_extension)  
             all_images_paths.append(img_path)
             all_boxes.append([xmin, ymin, xmax, ymax])
@@ -36,12 +35,13 @@ def load_images_from_csv(images_path, csv_path):
 
         filename = glob.glob(images_path + "/" + image_name_with_extension)[0]
         print("Filename: ", filename)
+        print("Bbs: ", len(all_boxes))
         img = cv2.imread(filename)
 
         for i, bbox in enumerate(all_boxes):
             bbox = [int(x) for x in bbox]
-            cv2.rectangle(img, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (255, 0, 0), 1)
-            cv2.putText(img, str(all_class_names[i]), (bbox[0], bbox[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0))
+            cv2.rectangle(img, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 1)
+            cv2.putText(img, str(all_class_names[i]), (bbox[0], bbox[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0))
 
         cv2.startWindowThread()
         cv2.imshow('img', img)

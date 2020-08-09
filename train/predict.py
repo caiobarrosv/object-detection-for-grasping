@@ -70,11 +70,9 @@ class Detector:
         self.net = net
 
         # TODO: load the train and val rec file
-        self.train_file = data_common['record_train_path']
         self.val_file = data_common['record_val_path']
 
         if self.dataset == 'voc':
-            self.train_dataset = gdata.RecordFileDetection(self.train_file)
             self.val_dataset = gdata.RecordFileDetection(self.val_file)
             self.val_metric = VOC07MApMetric(iou_thresh=validation_threshold, class_names=self.net.classes)
         else:
@@ -96,9 +94,10 @@ class Detector:
         return fbboxes, fscores, fids 
 
     def show_images(self, data, gt_bbox, det_bbox, index):
+        # Function still unused but kept for backup
         xmin_gt, ymin_gt, xmax_gt, ymax_gt = [int(x) for x in gt_bbox[0]]
         xmin_pred, ymin_pred, xmax_pred, ymax_pred = [int(x) for x in det_bbox[0]]
-        img = data[0][index]
+        img = data[index]
         img = img.transpose((1, 2, 0))  # Move channel to the last dimension
         # img = img.asnumpy().astype('uint8') # convert to numpy array
         # img = img.astype(np.uint8)  # use uint8 (0-255)
@@ -149,9 +148,7 @@ class Detector:
             gt_bboxes = []
             gt_ids = []
             gt_difficults = []
-            det_ids_teste, det_bboxes_teste = [], []
-            gt_ids_teste, gt_bbox_teste = [], []
-
+            
             for x, y in zip(data, label):
                 # get prediction results
                 ids, scores, bboxes = self.net(x)
@@ -163,61 +160,68 @@ class Detector:
                 gt_ids.append(y.slice_axis(axis=-1, begin=4, end=5))
                 gt_bboxes.append(y.slice_axis(axis=-1, begin=0, end=4))
                 # gt_difficults.append(y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None)
-
             
-            # Get Micro Averaging (precision and recall by each class) in each batch
-            for img in range(batch_size):
-                # det_ids_teste, det_bboxes_teste = zip(*sorted(zip(det_ids[img][0], det_bboxes[img][0])))
-                # gt_ids_teste, gt_bbox_teste = zip(*sorted(zip(gt_ids[img][0], gt_bboxes[img][0])))
-
-                det_ids_index = np.argsort(det_ids[img][0].asnumpy(), axis=0)
-                det_ids_teste = [index for index in det_ids[img][0][det_ids_index]]
-                det_bboxes_teste = [index for index in det_bboxes[img][0][det_ids_index]]
-
-                gt_ids_index = np.argsort(gt_ids[img][0].asnumpy(), axis=0)
-                gt_ids_teste = [index for index in gt_ids[img][0][gt_ids_index]]
-                gt_bbox_teste = [index for index in gt_bboxes[img][0][gt_ids_index]]
-
-                for current_class_id, (gt_bbox, det_bbox) in enumerate(zip(gt_bbox_teste, det_bboxes_teste)):
-                    det_bbox = det_bbox.asnumpy()
-                    # det_bbox = np.expand_dims(det_bbox, axis=0)
-                    gt_bbox = gt_bbox.asnumpy()
-                    # gt_bbox = np.expand_dims(gt_bbox, axis=0)
-                    iou = bbox_iou(det_bbox, gt_bbox)
-
-                    predict_id = int(det_ids_teste[current_class_id].asnumpy()[0][0])
-                    gt_id = int(gt_ids_teste[current_class_id].asnumpy()[0][0])
-
-                    # count +1 for this class id. It will get the total number of gt by class
-                    # It is useful when considering unbalanced datasets
-                    gt_by_class[gt_id] += 1
-
-                    # Uncomment the following line if you want to plot the images in each inference to visually  check the tp, fp and fn 
-                    self.show_images(data, gt_bbox, det_bbox, img)
-                    
-                    # Check if IoU is above the threshold and the class id corresponds to the ground truth
-                    if (iou > validation_threshold) and (predict_id == gt_id):
-                        tp[gt_id] += 1 # Correct classification
-                    else:
-                        fp[predict_id] += 1  # Wrong classification
-
             # update metric
             val_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids) #, gt_difficults)
 
+            # Get Micro Averaging (precision and recall by each class) in each batch
+            for img in range(batch_size):
+                gt_ids_teste, gt_bboxes_teste = [], []
+                for ids in det_ids[0][img]:
+                    det_ids_number = (int(ids.asnumpy()[0]))
+                    # It is required to check if the predicted class is in the image
+                    # otherwise, count it as a false positive and do not include in the list
+                    if det_ids_number in list(gt_ids[0][img]):
+                        gt_index = list(gt_ids[0][img]).index(det_ids_number)
+                        gt_ids_teste.extend(gt_ids[0][img][gt_index])
+                        gt_bboxes_teste.append(gt_bboxes[0][img][gt_index])
+                    else:
+                        fp[det_ids_number] += 1  # Wrong classification
+
+                xww = 1
+                
+                # count +1 for this class id. It will get the total number of gt by class
+                # It is useful when considering unbalanced datasets
+                for gt_idx in gt_ids[0][img]:
+                    index = int(gt_idx.asnumpy()[0])
+                    gt_by_class[index] += 1
+                
+                for ids in range(len(gt_bboxes_teste)):
+                    det_bbox_ids = det_bboxes[0][img][ids]
+                    det_bbox_ids = det_bbox_ids.asnumpy()
+                    det_bbox_ids = np.expand_dims(det_bbox_ids, axis=0)
+                    predict_ind = int(det_ids[0][img][ids].asnumpy()[0])
+                    
+                    gt_bbox_ids = gt_bboxes_teste[ids]
+                    gt_bbox_ids = gt_bbox_ids.asnumpy()
+                    gt_bbox_ids = np.expand_dims(gt_bbox_ids, axis=0)
+                    gt_ind = int(gt_ids_teste[ids].asnumpy()[0])
+                    
+                    iou = bbox_iou(det_bbox_ids, gt_bbox_ids)
+
+                    # Uncomment the following line if you want to plot the images in each inference to visually  check the tp, fp and fn 
+                    # self.show_images(x, gt_bbox, det_bbox, img)
+                    
+                    # Check if IoU is above the threshold and the class id corresponds to the ground truth
+                    if (iou > validation_threshold) and (predict_ind == gt_ind):
+                        tp[gt_ind] += 1 # Correct classification
+                    else:
+                        fp[predict_ind] += 1  # Wrong classification
+        
         # calculate the Recall and Precision by class
         tp = np.array(tp)
         fp = np.array(fp)
         # rec and prec according to the micro averaging
-        for i, (gt, tp) in enumerate(zip(gt_by_class, tp)):
-            rec_by_class[i] += tp/gt
+        for i, (gt_value, tp_value) in enumerate(zip(gt_by_class, tp)):
+            rec_by_class[i] += tp_value/gt_value
 
             # If an element of fp + tp is 0,
             # the corresponding element of prec[l] is nan.
             with np.errstate(divide='ignore', invalid='ignore'):
-                prec_by_class[i] += tp/(tp+fp[i])
+                prec_by_class[i] += tp_value/(tp_value+fp[i])
 
         rec, prec = val_metric._recall_prec()
-        return val_metric.get(), rec_by_class, prec_by_class
+        return val_metric.get(), rec, prec
     
     def detect(self, image, plot=False):
         image_tensor, image = gcv.data.transforms.presets.ssd.load_test(image, self.width)
@@ -260,12 +264,12 @@ def main():
     # TODO: You just need to pass the param name inside the log folder (checkpoints folder configured in config.json)
     params = 'ssd_300_vgg16_atrous_voc_best_epoch_0025_map_0.8749.params'
 
-    det = Detector(params, model='ssd300_vgg16_voc', ctx='gpu', threshold=0.1, device_id=1, batch_size=1, num_workers=2, nms_threshold=0.5)
+    det = Detector(params, model='ssd300_vgg16_voc', ctx='gpu', threshold=0.1, device_id=1, batch_size=4, num_workers=2, nms_threshold=0.5)
 
     print("\nPlease configure the video/images files path in config.json before running the next command.")    
 
     a = int(input("Choose an option: \n[1] - Perform testing in images \n[2] - Perform testing in videos \n[3] - Perform testing using webcam\
-                 \n[4] - Perform only validation using a pre-trained network and a .rec val file\nOption: "))
+        \n[4] - Perform only validation using a pre-trained network and a .rec val file\nOption: "))
     
     if a == 1:
         images = glob.glob(data_common['image_folder'] + "/" + "*.jpg")

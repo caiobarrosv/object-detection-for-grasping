@@ -26,7 +26,8 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..')))
 import utils.dataset_commons as dataset_commons
 from utils.ssd_custom_val_transform import SSDCustomValTransform
-# from utils.voc_detection_custom import VOC07MApMetric
+import neptune
+
 
 '''
 The models used in this project:
@@ -158,7 +159,7 @@ class training_network():
             self.train_dataset = gdata.RecordFileDetection(self.train_file)
             self.val_dataset = gdata.RecordFileDetection(self.val_file)
             self.val_metric = VOC07MApMetric(iou_thresh=validation_threshold, class_names=self.net.classes)
-        elif dataset.lower() == 'coco':
+        elif self.dataset == 'coco':
             self.train_dataset = gdata.COCODetection(splits='instances_train2017')
             self.val_dataset = gdata.COCODetection(splits='instances_val2017', skip_empty=False)
             self.val_metric = COCODetectionMetric(
@@ -339,45 +340,58 @@ class training_network():
                 # gt_difficults.append(y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None)
 
             # Get Micro Averaging (precision and recall by each class) in each batch
-            for img in range(len(gt_bboxes[0])):
-                iou = bbox_iou(det_bboxes[0][img].asnumpy(), gt_bboxes[0][img].asnumpy())
-                
-                for bbox in range(len(gt_bboxes[0][img])):
-                    iou_by_bbox = iou[bbox][bbox]
-                    current_gt_class_id = int(gt_ids[0][img][bbox].asnumpy()[0])
-                    current_pred_class_id = int(det_ids[0][img][bbox].asnumpy()[0])
+            for img in range(batch_size):
+                # det_ids_teste, det_bboxes_teste = zip(*sorted(zip(det_ids[img][0], det_bboxes[img][0])))
+                # gt_ids_teste, gt_bbox_teste = zip(*sorted(zip(gt_ids[img][0], gt_bboxes[img][0])))
 
-                    # Uncomment the following line if you want to plot the images in each inference to visually  check the tp, fp and fn 
-                    # self.show_images(img, data, gt_bboxes[0][img][bbox], det_bboxes[0][img][bbox], current_gt_class_id, current_pred_class_id)
-                    
+                det_ids_index = np.argsort(det_ids[img][0].asnumpy(), axis=0)
+                det_ids_teste = [index for index in det_ids[img][0][det_ids_index]]
+                det_bboxes_teste = [index for index in det_bboxes[img][0][det_ids_index]]
+
+                gt_ids_index = np.argsort(gt_ids[img][0].asnumpy(), axis=0)
+                gt_ids_teste = [index for index in gt_ids[img][0][gt_ids_index]]
+                gt_bbox_teste = [index for index in gt_bboxes[img][0][gt_ids_index]]
+
+                for current_class_id, (gt_bbox, det_bbox) in enumerate(zip(gt_bbox_teste, det_bboxes_teste)):
+                    det_bbox = det_bbox.asnumpy()
+                    # det_bbox = np.expand_dims(det_bbox, axis=0)
+                    gt_bbox = gt_bbox.asnumpy()
+                    # gt_bbox = np.expand_dims(gt_bbox, axis=0)
+                    iou = bbox_iou(det_bbox, gt_bbox)
+
+                    predict_id = int(det_ids_teste[current_class_id].asnumpy()[0][0])
+                    gt_id = int(gt_ids_teste[current_class_id].asnumpy()[0][0])
+
                     # count +1 for this class id. It will get the total number of gt by class
                     # It is useful when considering unbalanced datasets
-                    gt_by_class[current_gt_class_id] += 1
+                    gt_by_class[gt_id] += 1
 
+                    # Uncomment the following line if you want to plot the images in each inference to visually  check the tp, fp and fn 
+                    self.show_images(data, gt_bbox, det_bbox, img)
+                    
                     # Check if IoU is above the threshold and the class id corresponds to the ground truth
-                    if (iou_by_bbox > validation_threshold) and (current_gt_class_id == current_pred_class_id):
-                        tp[current_gt_class_id] += 1 # Correct classification
+                    if (iou > validation_threshold) and (predict_id == gt_id):
+                        tp[gt_id] += 1 # Correct classification
                     else:
-                        fp[current_pred_class_id] += 1  # Wrong classification
-                        fn[current_gt_class_id] += 1 # Did not classify
+                        fp[predict_id] += 1  # Wrong classification
 
             # update metric
             val_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids) #, gt_difficults)
-
+        
         # calculate the Recall and Precision by class
         tp = np.array(tp)
         fp = np.array(fp)
         # rec and prec according to the micro averaging
-        for i, gt in enumerate(gt_by_class):
-            rec_by_class[i] += tp[i]/gt
+        for i, (gt, tp) in enumerate(zip(gt_by_class, tp)):
+            rec_by_class[i] += tp/gt
 
             # If an element of fp + tp is 0,
             # the corresponding element of prec[l] is nan.
             with np.errstate(divide='ignore', invalid='ignore'):
-                prec_by_class[i] += tp[i]/(tp[i]+fp[i])
+                prec_by_class[i] += tp/(tp+fp[i])
 
         rec, prec = val_metric._recall_prec()
-        return val_metric.get(), rec_by_class, prec_by_class
+        return val_metric.get(), rec, prec
 
     def train(self):
         """Training pipeline"""
@@ -507,6 +521,7 @@ class training_network():
                 sw.add_scalar('epoch_train_loss', (name1, loss1), epoch)
                 sw.add_scalar('epoch_train_loss', (name2, loss2), epoch)
                 sw.add_scalar('train_val_sum_loss', ('train_sum_loss', loss1+loss2), epoch)
+                neptune.log_metric('epoch_train_loss', score) 
 
                 logger.info('[Epoch {}] Training time (min): {:.3f}, {}={:.3f}, {}={:.3f}'.format(
                     epoch, (time.time()-tic)/60, name1, loss1, name2, loss2))
@@ -526,14 +541,13 @@ class training_network():
                     else:
                         save_param_loss = 0
 
-
                     # consider reduce the frequency of validation to save time
                     (map_name, mean_ap), rec_by_class, prec_by_class = self.validate()
                     val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
 
                     for i, class_name in enumerate(self.classes):
-                        sw.add_scalar('rec_by_class_val', (class_name + '_rec', rec_by_class[i]), epoch)
-                        sw.add_scalar('prec_by_class_val', (class_name + '_prec', prec_by_class[i]), epoch)
+                        sw.add_scalar('rec_by_class_val', (class_name + '_rec', rec_by_class[i][-1]), epoch)
+                        sw.add_scalar('prec_by_class_val', (class_name + '_prec', prec_by_class[i][-1]), epoch)
 
                     for k, v in zip(map_name, mean_ap):
                         sw.add_scalar('map_val', (k, v), epoch)
@@ -553,6 +567,21 @@ class training_network():
             sw.export_scalars(scalars)
 
 if __name__ == '__main__':
+    neptune.init('caioviturino/IJR2020')
+    project_name = input("Name of this project: ")
+    neptune.create_experiment(project_name)
+
+    # create experiment (all parameters are optional)
+    neptune.create_experiment(name='first-pytorch-ever',
+                            params={'lr': 0.0005,
+                                    'dropout': 0.2},
+                            properties={'key1': 'value1',
+                                        'key2': 17,
+                                        'key3': 'other-value'},
+                            description='write longer description here',
+                            tags=['list-of', 'tags', 'goes-here', 'as-list-of-strings'],
+                            upload_source_files=['training_with_pytorch.py'])
+
     train_object = training_network(model='ssd300_vgg16_voc', ctx='gpu', \
                                     lr_decay_epoch='30, 50', lr=0.001, \
                                     lr_decay=0.1, batch_size=4, epochs=60, \
@@ -570,3 +599,5 @@ if __name__ == '__main__':
 
     # training
     train_object.train()
+
+    neptune.stop()

@@ -17,6 +17,7 @@ def check_record_file(record_path):
     '''
     record_file = recordio.detection.RecordFileDetection(record_path)
     for img, labels in record_file: 
+        print('Labels: ', len(labels))
         for label in labels:
             [xmin, ymin, xmax, ymax] = [int(label) for label in label[0:-1]]
             class_id = int(label[-1])
