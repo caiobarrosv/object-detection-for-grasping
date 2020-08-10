@@ -221,7 +221,7 @@ class Detector:
                 prec_by_class[i] += tp_value/(tp_value+fp[i])
 
         rec, prec = val_metric._recall_prec()
-        return val_metric.get(), rec, prec
+        return val_metric.get(), rec_by_class, prec_by_class
     
     def detect(self, image, plot=False):
         image_tensor, image = gcv.data.transforms.presets.ssd.load_test(image, self.width)

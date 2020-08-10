@@ -94,7 +94,7 @@ def main():
     lst_paths = [lst_train_path, lst_val_path]
     img_paths = [image_folder, image_val_folder]
 
-    print("Remember to put all your images into one single foder and configure the path")
+    print("Remember to configure the train and validation images path")
     print("in the config.json file")
 
     resize_images = int(input("Do you want to resize the image? 1 for 'yes', 0 for 'no': "))

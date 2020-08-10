@@ -231,6 +231,9 @@ Bouding box format: xmin, ymin, xmax, ymax
   - Train and validation images (resized): [[Download](https://drive.google.com/file/d/13MDJLE0F4SRnsrlE3S-HKfW8FtK1BtJS/view?usp=sharing)]
     - Image resolution: (300, 300, 3) # (height, width, channel)
     - Type of the files: .rec
+  - Train and validation images (resized): [[Download](https://drive.google.com/file/d/15V6UKPtvWjw173-LFmqL15P0BIYXZo2j/view?usp=sharing)]
+    - Image resolution: (512, 512, 3) # (height, width, channel)
+    - Type of the files: .rec
   - Training images: 500 train
   - Validation images: 124 val
   - Classes: Bar clamp, gear box, vase, part_1, part_3, nozzle, pawn, and turbine_housing
