@@ -9,15 +9,15 @@
                 "pawn" : 6,
                 "turbine_housing" : 7
               },
-  "checkpoint_folder" : "checkpoints/teste_7_ssd300_vgg16_300_300_x1",
-  "logs_folder" : "logs/teste_7_ssd300_vgg16_voc_x1_pc",
+  "checkpoint_folder" : "checkpoints",
+  "logs_folder" : "logs",
   "image_folder" : "datasets_imagens/teste_6_train",
   "image_val_folder" : "datasets_imagens/teste_6_validation",
   "video_folder" : "datasets_videos",
   "csv_train" : "datasets_imagens/teste_6_train/csv_files/vott-csv-export/train_dataset.csv",
   "csv_validation" : "datasets_imagens/teste_6_validation/csv/val_dataset.csv",
-  "record_train_path" : "data/teste_7_300_300/train_teste_7_300_300.rec",
-  "record_val_path": "data/teste_7_300_300/val_teste_7_300_300.rec",
-  "lst_train_path" : "data/teste_7_300_300/train_teste_7_300_300.lst",
-  "lst_val_path" : "data/teste_7_300_300/val_teste_7_300_300.lst"  
+  "record_train_path" : "data/teste_7_800_800/train_teste_7_800_800.rec",
+  "record_val_path": "data/teste_7_800_800/val_teste_7_800_800.rec",
+  "lst_train_path" : "data/teste_7_800_800/train_teste_7_800_800.lst",
+  "lst_val_path" : "data/teste_7_800_800/val_teste_7_800_800.lst"  
 }

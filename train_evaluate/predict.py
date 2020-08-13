@@ -200,7 +200,7 @@ class Detector:
                     iou = bbox_iou(det_bbox_ids, gt_bbox_ids)
 
                     # Uncomment the following line if you want to plot the images in each inference to visually  check the tp, fp and fn 
-                    # self.show_images(x, gt_bbox, det_bbox, img)
+                    # self.show_images(x, gt_bbox_ids, det_bbox_ids, img)
                     
                     # Check if IoU is above the threshold and the class id corresponds to the ground truth
                     if (iou > validation_threshold) and (predict_ind == gt_ind):
