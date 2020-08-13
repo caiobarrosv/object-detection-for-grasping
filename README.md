@@ -139,81 +139,18 @@ A bigger dataset is under development.
 
 Bouding box format: xmin, ymin, xmax, ymax
 
-- [Dataset 1](https://drive.google.com/file/d/1IrBlQRCX4731ISnXCqnuGpLrakFWPPbB/view?usp=sharing) 
-  - Image resolution: (756, 1008, 3) # (height, width, channel)
-  - Type of the files: .jpeg
-  - Number of images: 320
-  - Classes: Bar clamp and gear box
-  - In this dataset, the train and validation files have 1 classe per image with only 1 type of background
-  - Ground truth: 1 ground truth per image (only 1 part is in the image)
-<p align="center">Example of train and validation image:</p>
-<p align="center">
-<img src="https://user-images.githubusercontent.com/28100951/89105060-65b40900-d3f4-11ea-876a-cac81d3b1ec1.png" width="200"/>
-</p>
-
-
-- [Dataset 2](https://drive.google.com/file/d/1zf8WPfhgEjUtlamjo58V3URlfXsPl-U6/view?usp=sharing) 
-  - Image resolution: (300, 300, 3) # (height, width, channel)
-  - Type of the files: .jpeg
-  - Number of images: 320
-  - Classes: Bar clamp and gear box
-  - In this dataset, the train and validation files have 1 classe per image with only 1 type of background
-  - Ground truth: 1 ground truth per image (only 1 part is in the image)
-<p align="center">Example of train and validation image:</p>
-<p align="center">
-<img src="https://user-images.githubusercontent.com/28100951/89105095-998f2e80-d3f4-11ea-9c0e-3c0dcdc494cf.png" width="190">
-</p>
-
-- [Dataset - Teste 4](https://drive.google.com/file/d/15L-iOGPgF5al5sHx3rLiIF_F2Hs3iQjd/view?usp=sharing) 
-  - Image resolution: (300, 300, 3) # (height, width, channel) 
-  - Type of the files: .rec
-  - Training images: 320 train
-  - Validation images: 64 val
-  - Classes: Bar clamp and gear box
-  - In this dataset, the train images have all the classes together with the same background as well as the validation files with the same background
-  - Ground truths: 2 ground truths per image (all the 8 parts are in the image)
-<p align="center">Example of train image:</p>
-<p align="center"> 
-<img src="https://user-images.githubusercontent.com/28100951/89105110-bfb4ce80-d3f4-11ea-928e-c1606922ee41.png" width="160" title="train image">
-</p>
-<p align="center">Example of validation image:</p>
-<p align="center"> 
-<img src="https://user-images.githubusercontent.com/28100951/89105112-c0e5fb80-d3f4-11ea-9a87-77b326f586b0.png" width="160">
-</p> 
-
-
-- [Dataset - Teste 5](https://drive.google.com/file/d/1AT0_UCA-sP9Mt8z-KuPkPSmVKocC84XZ/view?usp=sharing) 
-  - Image resolution: (300, 300, 3) # (height, width, channel)
-  - Type of the files: .rec
-  - Training images: 560 train
-  - Validation images: 64 val
-  - Classes: Bar clamp and gear box
-  - The train images have all the classes together with different backgrounds as well as the validation files with the same background
-  - Ground truths: 2 ground truths per image (all the 8 parts are in the image)
-<p align="center">Example of train images:</p>
-<p align="center"> 
-<img src="https://user-images.githubusercontent.com/28100951/89105201-77e27700-d3f5-11ea-80e0-b6abbddc7afa.png"  width="400" title="train image">
-</p> 
-
-<p align="center">Example of validation image:</p>
-<p align="center"> 
-<img src="https://user-images.githubusercontent.com/28100951/89105225-bb3ce580-d3f5-11ea-9463-ee16d6c67484.png"  width="100" title="train image">
-</p> 
-
-- [Dataset - Teste 6](https://drive.google.com/file/d/1dEAJj7fm_lxxrBl0w8gEeSOg3AHCHxZ0/view?usp=sharing) 
-  - Image resolution: (300, 300, 3) # (height, width, channel)
-  - Type of the files: .rec
+- Dataset 7
+  - Train and validation images (resized): [[Download](https://drive.google.com/file/d/1ZwOvC7vEk8-mnjo-phzfVxgsdqrfnqXw/view?usp=sharing)]
+    - Image resolution: (800, 800, 3) # (height, width, channel)
+    - Type of the files: .rec
   - Training images: 500 train
   - Validation images: 124 val
-  - Classes: Bar clamp and gear box
-  - The train images have all the classes together with different backgrounds 
-    - Ground truths: 2 ground truths per image (all the 8 parts are in the image)
-  - The validation files also have different backgrounds. 
-    - Ground truths: 1 ground truths in the images like the left image
-    - Ground truths: 2 ground truths per image in the images like the right image
-  - Remember to set the post_nms to be equal the max number of classes of the validation dataset. In this dataset, we can have 2 classes by image:
-    - `self.net.set_nms(nms_thresh=nms_threshold, nms_topk=200, post_nms=2)`
-  
+  - Classes: Bar clamp, gear box, vase, part_1, part_3, nozzle, pawn, and turbine_housing
+  - The train and validation images have the ground truths for all the classes
+  - Remember to set the post_nms to be equal the max number of classes of the validation dataset. In this dataset, we can have 8 classes by image:
+    - `self.net.set_nms(nms_thresh=nms_threshold, nms_topk=200, post_nms=8)`
+  - Obs.: The only difference between dataset 7 and dataset 6 is that the dataset 7 contains the ground truths for all the classes 
+
 <p align="center">Example of train images:</p>
 <p align="center"> 
 <img src="https://user-images.githubusercontent.com/28100951/89105914-b5e29980-d3fb-11ea-8758-067881325f70.png"  width="300" title="train image">
@@ -224,26 +161,9 @@ Bouding box format: xmin, ymin, xmax, ymax
 <img src="https://user-images.githubusercontent.com/28100951/89105917-b713c680-d3fb-11ea-9d31-6d402c875b6d.png"  width="180" title="train image">
 </p> 
 
-- Dataset - Teste 7
-  - Train and validation images (real size): [Will be available soon]
-    - Image resolution: Some images are (800, 800, 3) # (height, width, channel) and others (1000, 1000, 3) # (height, width, channel)
-    - Type of the files: .rec
-  - Train and validation images (resized): [[Download](https://drive.google.com/file/d/13MDJLE0F4SRnsrlE3S-HKfW8FtK1BtJS/view?usp=sharing)]
-    - Image resolution: (300, 300, 3) # (height, width, channel)
-    - Type of the files: .rec
-  - Train and validation images (resized): [[Download](https://drive.google.com/file/d/15V6UKPtvWjw173-LFmqL15P0BIYXZo2j/view?usp=sharing)]
-    - Image resolution: (512, 512, 3) # (height, width, channel)
-    - Type of the files: .rec
-  - Training images: 500 train
-  - Validation images: 124 val
-  - Classes: Bar clamp, gear box, vase, part_1, part_3, nozzle, pawn, and turbine_housing
-  - The train and validation images have the ground truths for all the classes
-  - Remember to set the post_nms to be equal the max number of classes of the validation dataset. In this dataset, we can have 8 classes by image:
-    - `self.net.set_nms(nms_thresh=nms_threshold, nms_topk=200, post_nms=8)`
-  - Obs.: The only difference between dataset 7 and dataset 6 is that the dataset 7 contains the ground truths for all the classes 
-
 - [Video files for test - 1, 2, 3 and 4](https://drive.google.com/file/d/1pSBK4ZSbuQ6eEz-dKDKgM2LBzYU0E8Tb/view?usp=sharing) 
   - Video resolution: (1440, 1440, 3) # (height, width, channel)
+    - Obs: just resize the frames according to the network input size.
   - Type of the files: .mp4
   - Videos: 4 files
   - Classes: All classes together
