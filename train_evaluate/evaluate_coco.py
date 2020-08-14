@@ -113,9 +113,10 @@ class training_network():
             batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep', num_workers=num_workers)
         
         self.val_loader = val_loader
-    
-    def update_iou_metric(self, threshold):
-        self.val_metric = VOC07MApMetric(iou_thresh=threshold, class_names=self.net.classes)
+
+    def update_iou(self, validation_threshold):
+        self.validation_threshold = validation_threshold
+        self.val_metric = VOC07MApMetric(iou_thresh=validation_threshold, class_names=self.net.classes)
 
     def validate(self):
         """Test on validation dataset."""
@@ -235,15 +236,17 @@ class training_network():
         eval_metric = self.val_metric
         ctx = self.ctx
         
+        print('Analyzing validation threshold: [{}] ...'.format(self.validation_threshold))
+        
         (map_name, mean_ap), rec_by_class, prec_by_class = self.validate()
         val_msg = '\n'.join(['{}={} | prec: [{}]'.format(k, v, x) for k, v, x in zip(map_name, mean_ap, rec_by_class)])
-        print(val_msg + '\n')      
+        print(val_msg)      
         best_map = mean_ap[-1]
         return best_map
 
 if __name__ == '__main__':
     threshold = [0.5, 0.55, 0.6, 0.65, 0.70, 0.75, 0.80, 0.85, 0.9, 0.95]
-    best_map_list = []
+    
     coco_metric_dic_list = []
 
     model_networks_path = glob.glob(data_common['checkpoint_folder'] + '/*/')
@@ -262,17 +265,16 @@ if __name__ == '__main__':
             for param_path in param_paths:
                 start = param_path.find(experiment_id_name)
                 param_name = param_path[start+len(experiment_id_name)+2:-1]
-
                 train_object = training_network(model=model_name, 
-                                                ctx='gpu',
-                                                batch_size=16,
-                                                param_path=param_path)
-
+                                                    ctx='gpu',
+                                                    batch_size=4,
+                                                    param_path=param_path)
                 start_train_time = time.time()
-                for thresh in threshold:
-                    print('threshold: ', thresh)
-                    train_object.update_iou_metric(thresh)
+                best_map_list = []
+                for thresh in threshold: 
+                    train_object.update_iou(thresh)
                     best_map = train_object.evaluate_main()
+                    print('best map: [{}] | threshold: [{}] \n'.format(best_map, thresh))
                     best_map_list.append(best_map)
                 
                 map_05 = round(best_map_list[0]*100, 1)
@@ -291,9 +293,9 @@ if __name__ == '__main__':
                          )   
                 csv_list.append(value)
 
-                print('{} - mAPs [0.5:0.05:0.95]: '.format(model_name, best_map_list))
+                print('{} - mAPs [0.5:0.05:0.95]: {}'.format(model_name, best_map_list))
                 print('{} - Evaluation time [min]: {:.3f}'.format(model_name, (time.time() - start_train_time)/60))
-                print('{} - mAP IoU 0.5: [{}] | mAP  IoU 0.75: [{}] | mAP  IoU 0.5:0.95: [{}]'.format(model_name, map_05, map_075, media_05_095))
+                print('{} - mAP IoU 0.5: [{}] | mAP  IoU 0.75: [{}] | mAP  IoU 0.5:0.95: [{}] \n'.format(model_name, map_05, map_075, media_05_095))
     
     column_name = ['model_name', 'map_iou_0.5', 'map_iou_0.75', 'map_iou_0.5:0.95', 'experiment_id']
     csv_df = pd.DataFrame(csv_list, columns=column_name)
