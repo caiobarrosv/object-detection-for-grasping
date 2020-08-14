@@ -1,7 +1,6 @@
 """Train SSD"""
 # import argparse
 import os
-import logging
 import time
 import numpy as np
 import mxnet as mx
@@ -16,25 +15,26 @@ from gluoncv.data.batchify import Tuple, Stack, Pad
 from gluoncv.data.transforms.presets.ssd import SSDDefaultTrainTransform
 from gluoncv.data.transforms.presets.ssd import SSDDefaultValTransform
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
-from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
+# from gluoncv.utils.metrics.coco_detection import COCODetectionMetric
 from gluoncv.utils.bbox import bbox_iou 
 from mxnet.contrib import amp
 import cv2
 
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..')))
-import utils.dataset_commons as dataset_commons
+import utils.common as dataset_commons
 from utils.ssd_custom_val_transform import SSDCustomValTransform
 import utils.environments_setup # must be imported before NEPTUNE
 import neptune
 
+os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 
 '''
 The models used in this project:
     PASCAL VOC:
-        1) ssd_300_vgg16_atrous_voc 
+        1) ssd_300_vgg16_atrous_voc        
         2) ssd_512_vgg16_atrous_voc 
-        3) ssd_512_resnet50_v1_voc
+        3) ssd_512_ResNet50_atrous_voc
         4) faster_rcnn_resnet50_v1b_voc
         5) yolo3_darknet53_voc 
     COCO:
@@ -51,7 +51,8 @@ class training_network():
     def __init__(self, model='ssd300', ctx='gpu', resume_training=False, batch_size=4, num_workers=2, lr=0.001, 
                  lr_decay=0.1, lr_decay_epoch='60, 80', wd=0.0005, momentum=0.9, val_interval=1, start_epoch=0,
                  epochs=2, dataset='voc', network='vgg16_atrous', save_interval=0, resume='',
-                 validation_threshold=0.5, nms_threshold=0.5, optimizer='sgd', exp=False):
+                 beta1=0.9, beta2=0.999, epsilon=1e-08, validation_threshold=0.5, nms_threshold=0.5, optimizer='sgd', 
+                 exp=None):
         """
         Script responsible for training the class
 
@@ -70,14 +71,14 @@ class training_network():
             resume (str, default: ''): Resume from previously saved parameters if not None. For example, you 
                 can resume from ./ssd_xxx_0123.params'
             epochs (int, default:2): Training epochs.
-            num_worker (int, default: 2): number to accelerate data loading, if you CPU and GPUs are powerful.
+            num_worker (int, default: 2): number to accelerate data loading
             dataset (str, default:'voc'): Training dataset. Now support voc.
             batch_size (int, default: 4): Training mini-batch size
             data_shape (int, default: 300): Input data shape, use 300, 512.
             network (str, default:'vgg16_atrous'): Base network name which serves as feature extraction base.
         """
 
-        amp.init()
+        # amp.init()
 
         # TRAINING PARAMETERS
         self.resume_training = resume_training
@@ -96,7 +97,10 @@ class training_network():
         self.resume = resume
         self.validation_threshold = validation_threshold
         self.nms_threshold = nms_threshold
-        self.experiment = experiment
+        self.experiment = exp
+        self.beta1=beta1
+        self.beta2=beta2
+        self.epsilon=epsilon
 
         if ctx == 'cpu':
             self.ctx = [mx.cpu()]
@@ -108,16 +112,8 @@ class training_network():
         # fix seed for mxnet, numpy and python builtin random generator.
         gutils.random.seed(233)
 
-        if model.lower() == 'ssd300_vgg16_voc':
-            self.model_name = 'ssd_300_vgg16_atrous_voc' #'ssd_300_vgg16_atrous_coco'
-            self.dataset= 'voc'
-            self.width, self.height = 300, 300
-            self.network = 'vgg16_atrous'
-        elif model.lower() == 'ssd300_vgg16_coco':
-            self.model_name = 'ssd_300_vgg16_atrous_coco'
-            self.dataset= 'coco'
-            self.width, self.height = 300, 300
-            self.network = 'vgg16_atrous'
+        self.width, self.height = dataset_commons.get_model_prop(model)
+        self.model_name = model
         
         # TODO: Specify the checkpoints save path
         self.save_prefix = os.path.join(data_common['checkpoint_folder'], self.model_name)
@@ -126,8 +122,7 @@ class training_network():
         self.train_file = data_common['record_train_path']
         self.val_file = data_common['record_val_path']
 
-        classes_keys = [key for key in data_common['classes']]
-        self.classes = classes_keys
+        self.classes = ['bar_clamp', 'gear_box', 'vase', 'part_1', 'part_3', 'nozzle', 'pawn', 'turbine_housing'] # please, follow the order of the config.json file
         print('Classes: ', self.classes)
 
         # pretrained or pretrained_base?
@@ -153,22 +148,9 @@ class training_network():
     def get_dataset(self):
         validation_threshold = self.validation_threshold
         nms_threshold = self.nms_threshold
-
-        if self.dataset == 'voc':
-            self.train_dataset = gdata.RecordFileDetection(self.train_file)
-            self.val_dataset = gdata.RecordFileDetection(self.val_file)
-            self.val_metric = VOC07MApMetric(iou_thresh=validation_threshold, class_names=self.net.classes)
-        elif self.dataset == 'coco':
-            self.train_dataset = gdata.COCODetection(splits='instances_train2017')
-            self.val_dataset = gdata.COCODetection(splits='instances_val2017', skip_empty=False)
-            self.val_metric = COCODetectionMetric(
-                val_dataset, save_prefix + '_eval', cleanup=True,
-                data_shape=(args.data_shape, args.data_shape))
-            # coco validation is slow, consider increase the validation interval
-            if args.val_interval == 1:
-                args.val_interval = 10
-        else:
-            raise NotImplementedError('Dataset: {} not implemented.'.format(self.dataset))
+        self.train_dataset = gdata.RecordFileDetection(self.train_file)
+        self.val_dataset = gdata.RecordFileDetection(self.val_file)
+        self.val_metric = VOC07MApMetric(iou_thresh=validation_threshold, class_names=self.net.classes)
 
     def show_summary(self):
         self.net.summary(mx.nd.ones((1, 3, self.height, self.width)))
@@ -186,10 +168,8 @@ class training_network():
             _, _, anchors = self.net(mx.nd.zeros((1, 3, height, width)))
         
         # use fake data to generate fixed anchors for target generation
-        # with autograd.train_mode():
         with mx.Context(mx.gpu(0)):
             anchors2 = anchors
-                # _, _, anchors2 = self.net(mx.nd.zeros((1, 3, height, width)))
         
         batchify_fn = Tuple(Stack(), Stack(), Stack())  # stack image, cls_targets, box_targets
         self.train_loader = gluon.data.DataLoader(
@@ -217,35 +197,11 @@ class training_network():
         if current_map > best_map[0]:
             best_map[0] = current_map
             self.net.save_parameters('{:s}_best_epoch_{:04d}_map_{:.4f}.params'.format(prefix, epoch, current_map))
-        
-        if save_param_loss:
-            self.net.save_parameters('{:s}_best_epoch_{:04d}_val_loss_{:.4f}_map_{:.4f}.params'.format(prefix, epoch, best_val_loss, current_map))
-
-        if not epoch and epoch % save_interval == 0:
-            self.net.save_parameters('{:s}_{:04d}_{:.4f}.params'.format(prefix, epoch, current_map))
-
-    def show_images(self, i, data, gt_bboxes, det_bboxes, current_gt_class_id, current_pred_class_id):
-        gt_bboxes = gt_bboxes.asnumpy()
-        det_bboxes = det_bboxes.asnumpy()
-        xmin_gt, ymin_gt, xmax_gt, ymax_gt = [int(x) for x in gt_bboxes]
-        xmin_pred, ymin_pred, xmax_pred, ymax_pred = [int(x) for x in det_bboxes]
-        img = data[0][i]
-        img = img.transpose((1, 2, 0))  # Move channel to the last dimension
-        img = img.asnumpy()
-        img = img.astype(np.uint8)
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR) # OpenCV uses BGR orde
-        cv2.rectangle(img, (xmin_gt, ymin_gt), (xmax_gt, ymax_gt), (255, 0, 0), 1)
-        cv2.rectangle(img, (xmin_pred, ymin_pred), (xmax_pred, ymax_pred), (0, 255, 0), 1)
-        cv2.startWindowThread()
-        cv2.imshow('img', img)
-        cv2.waitKey(5000)
-        cv2.destroyWindow('img')
 
     def val_loss(self):
         """Training pipeline"""        
         val_data = self.val_loader_loss
         ctx = self.ctx
-        val_metric = self.val_metric
 
         mbox_loss = gcv.loss.SSDMultiBoxLoss()
         ce_metric = mx.metric.Loss('CrossEntropy')
@@ -278,7 +234,7 @@ class training_network():
         name1, loss1 = ce_metric.get()
         name2, loss2 = smoothl1_metric.get()
 
-        return name1, loss1, name2, loss2        
+        return name1, loss1, name2, loss2
 
     def validate(self):
         """Test on validation dataset."""
@@ -392,6 +348,25 @@ class training_network():
         rec, prec = val_metric._recall_prec()
         return val_metric.get(), rec_by_class, prec_by_class
 
+    def create_optimizer(self):
+        print('aqui 1')
+        optimizer = self.optimizer
+        momentum = self.momentum
+        wd = self.weight_decay
+        lr = self.learning_rate
+        beta1 = self.beta1
+        beta2 = self.beta2
+        epsilon = self.epsilon
+        
+        if optimizer.lower() == 'sgd':
+            # wd: The weight decay (or L2 regularization) coefficient.
+            self.trainer = gluon.Trainer(self.net.collect_params(), optimizer,
+                                    {'learning_rate': lr, 'wd': wd, 'momentum': momentum})
+        elif optimizer.lower() == 'adam':
+            self.trainer = gluon.Trainer(self.net.collect_params(), optimizer,
+                                    {'learning_rate': lr, 'beta1': beta1, 'beta2': beta2, 
+                                     'epsilon': epsilon})
+
     def train(self):
         """Training pipeline"""
         train_data = self.train_loader
@@ -401,7 +376,6 @@ class training_network():
         lr = self.learning_rate
         wd = self.weight_decay
         momentum = self.momentum
-        optimizer = self.optimizer
         lr_decay = self.lr_decay
         lr_decay_epoch = self.lr_decay_epoch
         val_interval = self.val_interval
@@ -410,23 +384,25 @@ class training_network():
         epochs = self.epochs
         save_interval = self.save_interval
         experiment = self.experiment
+        optimizer = self.optimizer
 
         # Gluon-CV requires you to create and load the parameters of your model first on 
         # the CPU - so specify ctx=None - and when all that is done you move the 
         # whole model on the GPU with:
         self.net.collect_params().reset_ctx(self.ctx)
 
-        # wd: The weight decay (or L2 regularization) coefficient.
-        trainer = gluon.Trainer(self.net.collect_params(), optimizer,
-                                {'learning_rate': lr, 'wd': wd, 'momentum': momentum})
-        
+        # First create the trainer. Obs: you should reset_ctx before creating the optimizer
+        self.create_optimizer()
+        trainer = self.trainer
+
         # speeds up the training process
         # Check: https://mxnet.apache.org/api/python/docs/tutorials/performance/backend/amp.html
-        amp.init_trainer(trainer)
+        # amp.init_trainer(trainer)
 
-        # lr decay policy
-        lr_decay = float(lr_decay)
-        lr_steps = sorted([float(ls) for ls in lr_decay_epoch.split(',') if ls.strip()])
+        if optimizer =='sgd':
+            # lr decay policy
+            lr_decay = float(lr_decay)
+            lr_steps = sorted([float(ls) for ls in lr_decay_epoch.split(',') if ls.strip()])
 
         mbox_loss = gcv.loss.SSDMultiBoxLoss()
         ce_metric = mx.metric.Loss('CrossEntropy')
@@ -438,16 +414,21 @@ class training_network():
         best_val_loss = 20
         start_train_time = time.time()
 
+        # TODO: Speficy the summary save path
+        
+        # with SummaryWriter(logdir=self.path_summary) as sw:
         for epoch in range(start_epoch, epochs):
             start_epoch_time = time.time()
 
-            experiment.log_metric('learning_rate', epoch, trainer.learning_rate)
+            if experiment:
+                experiment.log_metric('learning_rate', epoch, trainer.learning_rate)
 
-            while lr_steps and epoch >= lr_steps[0]:
-                new_lr = trainer.learning_rate * lr_decay
-                lr_steps.pop(0) # removes the first element in the list
-                trainer.set_learning_rate(new_lr) # Set a new learning rate
-                print("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
+            if optimizer == 'sgd':
+              while lr_steps and epoch >= lr_steps[0]:
+                  new_lr = trainer.learning_rate * lr_decay
+                  lr_steps.pop(0) # removes the first element in the list
+                  trainer.set_learning_rate(new_lr) # Set a new learning rate
+                  print("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
                 
             ce_metric.reset() # Resets the internal evaluation result to initial state.
             smoothl1_metric.reset() # Resets the internal evaluation result to initial state.
@@ -479,27 +460,29 @@ class training_network():
                     sum_loss, cls_loss, box_loss = mbox_loss(
                         cls_preds, box_preds, cls_targets, box_targets)
                         
-                    with amp.scale_loss(sum_loss, trainer) as scaled_loss:
-                        autograd.backward(scaled_loss)
-                    # autograd.backward(sum_loss)
+                    # with amp.scale_loss(sum_loss, trainer) as scaled_loss:
+                        # autograd.backward(scaled_loss)
+                    autograd.backward(sum_loss)
                     
                 # since we have already normalized the loss, we don't want to normalize
                 # by batch-size anymore
                 trainer.step(1)
                 ce_metric.update(0, [l * batch_size for l in cls_loss])
                 smoothl1_metric.update(0, [l * batch_size for l in box_loss])
+
                 name1, loss1 = ce_metric.get()
                 name2, loss2 = smoothl1_metric.get()
-                
                 print('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}'.format(
                     epoch, i, batch_size/(time.time()-btic), name1, loss1, name2, loss2))
                 btic = time.time()
 
+            # log the epoch info
             name1, loss1 = ce_metric.get()
             name2, loss2 = smoothl1_metric.get()
-            experiment.log_metric('cross_entropy_training_loss', epoch, loss1)
-            experiment.log_metric('smooth_l1_training_loss', epoch, loss2) 
-            experiment.log_metric('train_sum_loss', epoch, loss1+loss2) 
+            if experiment:
+                experiment.log_metric('cross_entropy_training_loss', epoch, loss1)
+                experiment.log_metric('smooth_l1_training_loss', epoch, loss2) 
+                experiment.log_metric('train_sum_loss', epoch, loss1+loss2) 
 
             print('[Epoch {}] Training time (min): {:.3f}, {}={:.3f}, {}={:.3f}'.format(
                 epoch, (time.time()-tic)/60, name1, loss1, name2, loss2))
@@ -508,66 +491,72 @@ class training_network():
             if not (epoch + 1) % val_interval:
                 val_name1, val_loss1, val_name2, val_loss2 = self.val_loss()
                 current_val_loss = val_loss1+val_loss2
-                experiment.log_metric('cross_entropy_validation_loss', epoch, val_loss1)
-                experiment.log_metric('smooth_l1_validation_loss', epoch, val_loss2) 
-                experiment.log_metric('validation_sum_loss', epoch, current_val_loss) 
-                    
+                if experiment:
+                    experiment.log_metric('cross_entropy_validation_loss', epoch, val_loss1)
+                    experiment.log_metric('smooth_l1_validation_loss', epoch, val_loss2) 
+                    experiment.log_metric('validation_sum_loss', epoch, current_val_loss) 
+
                 if current_val_loss < best_val_loss:
                     best_val_loss = current_val_loss
                     save_param_loss = 1
                 else:
                     save_param_loss = 0
 
-                # consider reduce the frequency of validation to save time
                 (map_name, mean_ap), rec_by_class, prec_by_class = self.validate()
                 val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
 
                 for i, class_name in enumerate(self.classes):
-                    experiment.log_metric('rec_by_class_val_' + class_name, epoch, rec_by_class[i])
-                    experiment.log_metric('prec_by_class_val_' + class_name, epoch, prec_by_class[i])
+                    if experiment:
+                        experiment.log_metric('rec_by_class_val_' + class_name, epoch, rec_by_class[i])
+                        experiment.log_metric('prec_by_class_val_' + class_name, epoch, prec_by_class[i])
 
                 for k, v in zip(map_name, mean_ap):
-                    experiment.log_metric('map_' + k, epoch, v)
-                    
+                    if experiment:
+                        experiment.log_metric('map_' + k, epoch, v)
+
                 print('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
                 current_map = float(mean_ap[-1])
             else:
                 current_map = 0.
 
-            self.save_params(best_map, current_map, epoch, save_interval, save_param_loss, best_val_loss)            
+            # self.save_params(best_map, current_map, epoch, save_interval, save_param_loss, best_val_loss)            
 
         # Displays the total time of the training
         end_train_time = time.time()
         print('Train time {:.3f}'.format(end_train_time - start_train_time))
 
 if __name__ == '__main__':
-    neptune.init('caioviturino/IJR2020')
+    # neptune.init('caioviturino/IJR2020')
     
-    PARAMS = {'model_name': 'ssd300_vgg16_voc',
+    PARAMS = {'model_name': 'ssd_300_vgg16_atrous_coco',
               'ctx': 'gpu',
               'lr_decay_epoch': '30,50',
-              'lr': 0.001,
+              'lr': 0.00014348044333442934, # 0.001,
               'lr_decay': 0.1,
-              'batch_size': 16,
+              'batch_size': 32,
               'epochs': 60,
               'save_interval': 100,
-              'optimizer': 'sgd', #https://mxnet.apache.org/versions/1.6/api/python/docs/tutorials/packages/optimizer/index.html
-              'wd': 0.0005,
-              'momentum': 0.9,
+              'optimizer': 'adam', #https://mxnet.apache.org/versions/1.6/api/python/docs/tutorials/packages/optimizer/index.html
+              'wd': 0.0009247124194404376, # 0.0005, # sgd parameter
+              'momentum': 0.7561884086974885, # 0.9, # sgd parameter
+              'beta1': 0.9072439322788038, # 0.9, # adam parameter
+              'beta2': 0.9958530706682409, #0.999, # adam parameter
+              'epsilon': 1.316405901710664e-08, # 1e-08, # adam parameter
               'validation_threshold': 0.5,
               'nms_threshold': 0.5
               }
 
     # create experiment (all parameters are optional)
-    experiment = neptune.create_experiment(name=PARAMS['model_name'],
-                                           params=PARAMS,
-                                           tags=[PARAMS['model_name'], PARAMS['optimizer']])
+    # experiment = neptune.create_experiment(name=PARAMS['model_name'],
+                                        #    params=PARAMS,
+                                        #    tags=[PARAMS['model_name'], PARAMS['optimizer']]) exp=experiment,
 
     train_object = training_network(model=PARAMS['model_name'], ctx=PARAMS['ctx'], \
                                     lr_decay_epoch=PARAMS['lr_decay_epoch'], lr=PARAMS['lr'], \
                                     lr_decay=PARAMS['lr_decay'], batch_size=PARAMS['batch_size'], epochs=PARAMS['epochs'], \
-                                    save_interval=PARAMS['save_interval'], optimizer=PARAMS['optimizer'], exp=experiment, \
+                                    save_interval=PARAMS['save_interval'], optimizer=PARAMS['optimizer'],  \
                                     validation_threshold=PARAMS['validation_threshold'], nms_threshold=PARAMS['nms_threshold'], \
+                                    beta1=PARAMS['beta1'], beta2=PARAMS['beta2'], epsilon=PARAMS['epsilon'], \
                                     wd=PARAMS['wd'], momentum=PARAMS['momentum'])
     
     train_object.get_dataset()
@@ -576,7 +565,10 @@ if __name__ == '__main__':
     # Loads the dataset according to the batch size and num_workers
     train_object.get_dataloader()
 
-    # training
+    # try:
+        # training
     train_object.train()
-
-    neptune.stop()
+    # except:
+        # print('Stopped training')
+    # finally:
+        # neptune.stop()

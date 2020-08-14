@@ -1,7 +1,7 @@
 from gluoncv.data import recordio
 import numpy as np
 import cv2
-import dataset_commons
+import common as dataset_commons
 
 data_common = dataset_commons.get_dataset_files()
 record_train_path = data_common['record_train_path']

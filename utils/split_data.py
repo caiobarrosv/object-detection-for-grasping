@@ -6,7 +6,7 @@ https://github.com/yinguobing/tfrecord_utility
 
 import numpy as np
 import pandas as pd
-import dataset_commons
+import common as dataset_commons
 
 '''
 This script shuffle and split the data if needed.

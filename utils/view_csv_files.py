@@ -3,7 +3,7 @@ import numpy as np
 import os
 import glob
 import pandas as pd
-import dataset_commons
+import common as dataset_commons
 
 '''
 This code only gives you a tool to visualize 

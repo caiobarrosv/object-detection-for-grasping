@@ -12,7 +12,7 @@ import gluoncv.data.transforms.bbox as tbbox
 import cv2
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..')))
-import utils.dataset_commons as dataset_commons
+import utils.common as dataset_commons
 import time
 import glob
 from matplotlib import pyplot as plt
@@ -43,21 +43,8 @@ class Detector:
         else:
             raise ValueError('Invalid context.')
         
-        if model.lower() == 'ssd300_vgg16_voc':
-            model_name = 'ssd_300_vgg16_atrous_voc' #'ssd_300_vgg16_atrous_coco'
-            self.dataset= 'voc'
-            self.width, self.height = 300, 300
-        elif model.lower() == 'ssd300_vgg16_coco':
-            model_name = 'ssd_300_vgg16_atrous_coco'
-            self.dataset= 'voc' # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< MUDAR ISSO DEPOIS PARA COCO
-            self.width, self.height = 300, 300
-        elif (model.lower() == 'frcnn'):
-            model_name = 'faster_rcnn_resnet50_v1b_coco'
-            short = 600 # used to transform the images for the Faster R-CNN
-            # ongoing
-            # self.transform = rcnn.FasterRCNNDefaultValTransform(short=short)
-        else:
-            raise ValueError('Invalid model `{}`.'.format(model.lower()))
+        self.width, self.height = dataset_commons.get_model_prop(model)
+        self.model_name = model
 
         net = get_model(model_name, pretrained=False, ctx=self.ctx)
         # net.set_nms(nms_thresh=0.5, nms_topk=2)
@@ -72,12 +59,9 @@ class Detector:
         # TODO: load the train and val rec file
         self.val_file = data_common['record_val_path']
 
-        if self.dataset == 'voc':
-            self.val_dataset = gdata.RecordFileDetection(self.val_file)
-            self.val_metric = VOC07MApMetric(iou_thresh=validation_threshold, class_names=self.net.classes)
-        else:
-            raise NotImplementedError('Dataset: {} not implemented.'.format(self.dataset))
-
+        self.val_dataset = gdata.RecordFileDetection(self.val_file)
+        self.val_metric = VOC07MApMetric(iou_thresh=validation_threshold, class_names=self.net.classes)
+        
         # Val verdadeiro
         val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
         val_loader = gluon.data.DataLoader(

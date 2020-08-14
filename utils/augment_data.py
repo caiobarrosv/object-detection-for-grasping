@@ -2,12 +2,11 @@ from mxnet import nd
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..')))
-import utils.dataset_commons as dataset_commons
+import utils.common as dataset_commons
 import cv2
 import numpy as np
 import glob
 import pandas as pd
-import dataset_commons
 from gluoncv.data.transforms.presets.ssd import SSDDefaultTrainTransform
 from matplotlib import pyplot as plt
 

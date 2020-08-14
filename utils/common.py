@@ -23,3 +23,20 @@ def get_dataset_files():
     }    
 
     return dir_
+
+def get_model_prop(model_name):
+    if model_name.lower() == 'ssd_300_vgg16_atrous_voc':
+        width, height = 300, 300
+    elif model_name.lower() == 'ssd_512_resnet50_v1_voc':
+        width, height = 512, 512
+    elif model_name.lower() == 'ssd_512_vgg16_atrous_voc':
+        width, height = 512, 512
+    elif model_name.lower() == 'ssd_300_vgg16_atrous_coco':
+        width, height = 300, 300
+    elif model_name.lower() == 'ssd_512_vgg16_atrous_coco':
+        width, height = 512, 512
+    elif model_name.lower() == 'ssd_512_resnet50_v1_coco':
+        width, height = 512, 512
+    else:
+        raise ValueError('Invalid model `{}`.'.format(model_name.lower()))
+    return width, height

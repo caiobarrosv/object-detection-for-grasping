@@ -5,26 +5,42 @@ import gluoncv as gcv
 from mxnet import gluon
 # from gluoncv.data.transforms.presets import ssd, rcnn
 from gluoncv.model_zoo import get_model
-from gluoncv.utils import viz
 from gluoncv import data as gdata
-import gluoncv.data.transforms.image as timage
-import gluoncv.data.transforms.bbox as tbbox
 import cv2
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..')))
-import utils.dataset_commons as dataset_commons
-import time
+import utils.common as dataset_commons
 import glob
 from matplotlib import pyplot as plt
 from gluoncv.utils.metrics.voc_detection import VOC07MApMetric
 from gluoncv.data.batchify import Tuple, Stack, Pad
 from gluoncv.utils.bbox import bbox_iou 
 from gluoncv.data.transforms.presets.ssd import SSDDefaultValTransform
+import itertools
 
 data_common = dataset_commons.get_dataset_files()
 
+'''
+ATTENTION!
+
+This script will only plot the:
+- Box plot containing the precision by trained network
+- Confusion matrix of each trained network
+- Bar graph containing the total number of true positives and false positives of each trained network
+
+Instructions:
+
+Put all your trained network params inside the checkpoints folder in the following way:
+    checkpoints/network_name/experiment_id/params
+
+Example:
+    checkpoints/ssd_300_vgg16_atrous_voc/SAN-8/ssd_300_vgg16_atrous_voc_best_epoch_0042_map_0.9409.params
+
+'''
+
 class Detector:
-    def __init__(self, model_path, model='ssd300', ctx='gpu', threshold=0.5, validation_threshold=0.5, batch_size=4, num_workers=2, nms_threshold=0.5):
+    def __init__(self, model_path, model='ssd300_vgg16_voc', ctx='gpu', threshold=0.5, validation_threshold=0.5, 
+                 batch_size=4, num_workers=2, nms_threshold=0.5):
         self.model_path = model_path
         self.threshold = threshold
         self.validation_threshold = validation_threshold
@@ -41,41 +57,22 @@ class Detector:
             self.ctx = [mx.gpu(0)]
         else:
             raise ValueError('Invalid context.')
-        
-        if model.lower() == 'ssd300_vgg16_voc':
-            model_name = 'ssd_300_vgg16_atrous_voc' #'ssd_300_vgg16_atrous_coco'
-            self.dataset= 'voc'
-            self.width, self.height = 300, 300
-        elif model.lower() == 'ssd300_vgg16_coco':
-            model_name = 'ssd_300_vgg16_atrous_coco'
-            self.dataset= 'voc' # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< MUDAR ISSO DEPOIS PARA COCO
-            self.width, self.height = 300, 300
-        elif (model.lower() == 'frcnn'):
-            model_name = 'faster_rcnn_resnet50_v1b_coco'
-            short = 600 # used to transform the images for the Faster R-CNN
-            # ongoing
-            # self.transform = rcnn.FasterRCNNDefaultValTransform(short=short)
-        else:
-            raise ValueError('Invalid model `{}`.'.format(model.lower()))
 
-        net = get_model(model_name, pretrained=False, ctx=self.ctx)
+        self.width, self.height = dataset_commons.get_model_prop(model)
+        self.model_name = model
+
+        self.val_file = data_common['record_val_path']
+        
+        net = get_model(self.model_name, pretrained=False, ctx=self.ctx)
         # net.set_nms(nms_thresh=0.5, nms_topk=2)
         net.hybridize(static_alloc=True, static_shape=True)
         net.initialize(force_reinit=True, ctx=self.ctx)
-        print(self.classes)
         net.reset_class(classes=self.classes)
         net.load_parameters(self.model_path, ctx=self.ctx)
-		
         self.net = net
 
-        # TODO: load the train and val rec file
-        self.val_file = data_common['record_val_path']
-
-        if self.dataset == 'voc':
-            self.val_dataset = gdata.RecordFileDetection(self.val_file)
-            self.val_metric = VOC07MApMetric(iou_thresh=validation_threshold, class_names=self.net.classes)
-        else:
-            raise NotImplementedError('Dataset: {} not implemented.'.format(self.dataset))
+        self.val_dataset = gdata.RecordFileDetection(self.val_file)
+        self.val_metric = VOC07MApMetric(iou_thresh=validation_threshold, class_names=self.net.classes)
 
         # Val verdadeiro
         val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
@@ -232,7 +229,6 @@ class Detector:
                             gt_bbox_coord = gt_bbox_coordinates.asnumpy()
                             gt_bbox_coord = np.expand_dims(gt_bbox_coord, axis=0)
                             iou_prev = bbox_iou(pred_bbox_ids, gt_bbox_coord)
-                            self.show_images(x, gt_bbox_coord, pred_bbox_ids, img)
                             if iou_prev > validation_threshold:
                                 gt_bbox_label = int(gt_bbox_label.asnumpy()[0])
                                 confusion_matrix[gt_bbox_label][predict_ind] += 1
@@ -241,6 +237,10 @@ class Detector:
         # calculate the Recall and Precision by class
         tp = np.array(tp)
         fp = np.array(fp)
+        
+        gt_by_class_sum = sum(gt_by_class)
+        fp_sum = sum(fp)
+        tp_sum = sum(tp)
 
         # rec and prec according to the micro averaging
         for i, (gt_value, tp_value) in enumerate(zip(gt_by_class, tp)):
@@ -251,26 +251,17 @@ class Detector:
             with np.errstate(divide='ignore', invalid='ignore'):
                 prec_by_class[i] += tp_value/(tp_value+fp[i])
 
-        rec, prec = val_metric._recall_prec()
-        gt_by_class_sum = sum(gt_by_class)
-        fp_sum = sum(fp)
-        tp_sum = sum(tp)
-        return val_metric.get(), rec_by_class, prec_by_class, gt_by_class_sum, fp_sum, tp_sum
+        rec, prec = val_metric._recall_prec()        
+        return val_metric.get(), rec_by_class, prec_by_class, gt_by_class_sum, fp_sum, tp_sum, confusion_matrix
 
-    def detect(self, image, plot=False):
-        image_tensor, image = gcv.data.transforms.presets.ssd.load_test(image, self.width)
-        labels, scores, bboxes = self.net(image_tensor.as_in_context(self.ctx))
-        if plot:
-            ax = viz.plot_bbox(image, bboxes[0], scores[0], labels[0], class_names=self.net.classes)
-            plt.show()
-
-def evaluation_analysis(experiments_ids_list, fp_sum_list, tp_sum_list, prec_by_class_list):
-    fig, (ax1, ax2) = plt.subplots(1, 2)
+def evaluation_analysis(model_names_list, experiments_ids_list, fp_sum_list, tp_sum_list, prec_by_class_list):
+    fig, ax1 = plt.subplots()
+    fig2, ax2 = plt.subplots()
     fig.suptitle('Network evaluation')
+    fig2.suptitle('Network evaluation')
     red_square = dict(markerfacecolor='r', marker='s')
-    ax1.set_title('Precision analysis')
     ax1.boxplot(prec_by_class_list, labels=experiments_ids_list, flierprops=red_square)
-    ax2.set_ylabel('Precision')
+    ax1.set_ylabel('Precision')
     ax1.set_xlabel('Experiment ID')
     width = 0.35
     x = np.arange(len(experiments_ids_list))
@@ -279,6 +270,7 @@ def evaluation_analysis(experiments_ids_list, fp_sum_list, tp_sum_list, prec_by_
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax2.set_ylabel('Detections')
     ax2.set_title('FP/TP')
+    # label_x = [model_names_list[i] + '_' + experiments_ids_list[i] for i in range(len(experiments_ids_list))] 
     ax2.set_xticks(x)
     ax2.set_xticklabels(experiments_ids_list)
     ax2.legend(loc='center left')
@@ -293,11 +285,52 @@ def evaluation_analysis(experiments_ids_list, fp_sum_list, tp_sum_list, prec_by_
             xytext=(0, 3),  # 3 points vertical offset
             textcoords="offset points",
             ha='center', va='bottom')
-    fig.tight_layout()
+    # fig.tight_layout()
     plt.show()
 
-def main():
+def confusion_matrix_plot(cm, model_name, target_names, experiment_id_name):
+    accuracy = np.trace(cm) / float(np.sum(cm))
+    cmap = plt.get_cmap('Blues')
+    title = model_name
+    normalize    = False
+
+    if cmap is None:
+        cmap = plt.get_cmap('Blues')
+
+    plt.figure(figsize=(8, 6))
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title + ' ' + experiment_id_name)
+    plt.colorbar()
+
+    if target_names is not None:
+        tick_marks = np.arange(len(target_names))
+        plt.xticks(tick_marks, target_names, rotation=45)
+        plt.yticks(tick_marks, target_names)
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+
+    thresh = cm.max() / 1.5 if normalize else cm.max() / 2
+
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        if normalize:
+            plt.text(j, i, "{:0.4f}".format(cm[i, j]),
+                     horizontalalignment="center",
+                     color="white" if cm[i, j] > thresh else "black")
+        else:
+            plt.text(j, i, "{:,}".format(cm[i, j]),
+                     horizontalalignment="center",
+                     color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    # plt.show()
+
+def evaluate_main():
     model_networks_path = glob.glob(data_common['checkpoint_folder'] + '/*/')
+    
+    classes_keys = [key for key in data_common['classes']]
 
     experiments_ids_list = []
     prec_by_class_list = []
@@ -316,7 +349,6 @@ def main():
             for param_path in param_paths:
                 start = param_path.find(experiment_id_name)
                 param_name = param_path[start+len(experiment_id_name)+2:-1]
-
                 det = Detector(param_path, 
                    model=model_name, 
                    ctx='gpu', 
@@ -325,9 +357,11 @@ def main():
                    num_workers=2, 
                    nms_threshold=0.5 # It will affect validation
                    )
-                (map_name, mean_ap), rec_by_class, prec_by_class, gt_by_class_sum, fp_sum, tp_sum = det.validate()
+                (map_name, mean_ap), rec_by_class, prec_by_class, gt_by_class_sum, fp_sum, tp_sum, confusion_matrix = det.validate()
                 map_geral = float(mean_ap[-1])
                 map_gera_name = map_name[-1]
+                
+                confusion_matrix_plot(confusion_matrix, model_name, classes_keys, experiment_id_name)
 
                 prec_by_class_list.append(prec_by_class)
                 model_names_list.append(model_name)
@@ -341,19 +375,9 @@ def main():
                 print('params: ', param_name)
                 print('pec: ', prec_by_class)
 
-    
-    evaluation_analysis(experiments_ids_list, fp_sum_list, tp_sum_list, prec_by_class_list)
-    xsdq = 1
-    # os.path.join(data_common['checkpoint_folder'], self.model_name)
-
-    # # TODO: You just need to pass the param name inside the log folder (checkpoints folder configured in config.json)
-    # params = 'ssd_300_vgg16_atrous_voc_best_epoch_0025_map_0.8749.params'
-
-    # 
-    
-    # (map_name, mean_ap), rec_by_class, prec_by_class = det.validate()
-    # map_geral = float(mean_ap[-1])
-    # map_gera_name = map_name[-1]
+    evaluation_analysis(model_names_list, experiments_ids_list, fp_sum_list, tp_sum_list, prec_by_class_list)
+    for (exp_id, network) in zip(experiments_ids_list, model_names_list):
+        print("Model name: [{}] | Experiment ID: [{}]".format(network, exp_id))
 
 if __name__ == "__main__":
-    main()
+    evaluate_main()

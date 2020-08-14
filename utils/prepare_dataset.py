@@ -2,7 +2,7 @@ import os
 import mxnet as mx
 import numpy as np
 import pandas as pd
-import dataset_commons
+import common as dataset_common
 import glob
 import cv2
 '''
