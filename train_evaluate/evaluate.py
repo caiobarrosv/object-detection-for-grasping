@@ -89,23 +89,34 @@ class Detector:
         fbboxes = bounding_boxes.squeeze().asnumpy()[idx]
         return fbboxes, fscores, fids 
 
-    def show_images(self, data, gt_bbox, det_bbox, index):
-        # Function still unused but kept for backup
-        xmin_gt, ymin_gt, xmax_gt, ymax_gt = [int(x) for x in gt_bbox[0]]
-        xmin_pred, ymin_pred, xmax_pred, ymax_pred = [int(x) for x in det_bbox[0]]
-        img = data[index]
-        img = img.transpose((1, 2, 0))  # Move channel to the last dimension
-        # img = img.asnumpy().astype('uint8') # convert to numpy array
-        # img = img.astype(np.uint8)  # use uint8 (0-255)
-        img = img.asnumpy()
-        img = img.astype(np.uint8)
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR) # OpenCV uses BGR orde
-        cv2.rectangle(img, (xmin_gt, ymin_gt), (xmax_gt, ymax_gt), (255, 0, 0), 1)
-        cv2.rectangle(img, (xmin_pred, ymin_pred), (xmax_pred, ymax_pred), (0, 255, 0), 1)
-        cv2.startWindowThread()
-        cv2.imshow('img', img)
-        cv2.waitKey(5000)
-        cv2.destroyWindow('img')
+    def show_images(self, x, pred_label_list, pred_bboxes_list, gt_label_list, gt_bboxes_list):
+        for i, (gt_label, gt_bbox, pred_label, pred_bbox) in enumerate(zip(gt_label_list[0], gt_bboxes_list[0], pred_label_list[0], pred_bboxes_list[0])):
+            gt_bbox = gt_bbox.asnumpy().astype(int)
+            pred_bbox = pred_bbox.asnumpy().astype(int)
+            print(pred_label)
+            print(pred_bbox)
+            img = x[i]
+            img = img.transpose((1, 2, 0))  # Move channel to the last dimension
+            # img = img.asnumpy().astype('uint8') # convert to numpy array
+            # img = img.astype(np.uint8)  # use uint8 (0-255)
+            img = img.asnumpy()
+            img = img.astype(np.uint8)
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR) # OpenCV uses BGR order
+            for gt_lab, gt_bb, pred_lb, pred_bb in zip(gt_label, gt_bbox, pred_label, pred_bbox):
+                gt_lab = int(gt_lab.asnumpy()[0])
+                pred_lb = int(pred_lb.asnumpy()[0])
+                xmin_gt, ymin_gt, xmax_gt, ymax_gt = [coord for coord in gt_bb]
+                xmin_pred, ymin_pred, xmax_pred, ymax_pred = [coord for coord in pred_bb]        
+                img = cv2.rectangle(img, (xmin_gt, ymin_gt), (xmax_gt, ymax_gt), (255, 0, 0), 1)
+                img = cv2.rectangle(img, (xmin_pred, ymin_pred), (xmax_pred, ymax_pred), (0, 255, 0), 1)
+                img = cv2.putText(img, str(gt_lab), (xmin_gt, ymin_gt + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0))
+                img = cv2.putText(img, str(pred_lb), (xmin_pred + 10, ymin_pred + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0))
+            cv2.startWindowThread()
+            cv2.imshow('img', img)
+            a = cv2.waitKey(0) # close window when ESC is pressed
+            if a == 27:
+                break
+            cv2.destroyWindow('img')
 
     def validate(self):
         """Test on validation dataset."""
@@ -157,6 +168,9 @@ class Detector:
                 gt_label_list.append(y.slice_axis(axis=-1, begin=4, end=5))
                 gt_bboxes_list.append(y.slice_axis(axis=-1, begin=0, end=4))
             
+            # Uncomment the following line if you want to plot the images in each inference to visually  check the tp, fp and fn 
+            self.show_images(x, pred_label_list, pred_bboxes_list, gt_label_list, gt_bboxes_list)
+            
             # update metric
             val_metric.update(pred_bboxes_list, pred_label_list, pred_scores_list, gt_bboxes_list, gt_label_list) #, gt_difficults)
 
@@ -195,8 +209,7 @@ class Detector:
                                 confusion_matrix[gt_bbox_label][pred_label] += 1
                                 break
 
-                xww = 1
-
+                
                 # count +1 for this class id. It will get the total number of gt by class
                 # It is useful when considering unbalanced datasets
                 for gt_idx in gt_label_list[0][img]:
@@ -216,13 +229,11 @@ class Detector:
                     
                     iou = bbox_iou(pred_bbox_ids, gt_bbox_ids)
 
-                    # Uncomment the following line if you want to plot the images in each inference to visually  check the tp, fp and fn 
-                    # self.show_images(x, gt_bbox_ids, pred_bbox_ids, img)
-                    
                     # Check if IoU is above the threshold and the class id corresponds to the ground truth
                     if (iou > validation_threshold) and (predict_ind == gt_ind):
                         tp[gt_ind] += 1 # Correct classification
                         confusion_matrix[gt_ind][gt_ind]  += 1
+                        print('aqui')
                     else:
                         fp[predict_ind] += 1  # Wrong classification
                         for (gt_bbox_label, gt_bbox_coordinates) in zip(gt_label_list[0][img], list(gt_bboxes_list[0][img])):
@@ -232,6 +243,10 @@ class Detector:
                             if iou_prev > validation_threshold:
                                 gt_bbox_label = int(gt_bbox_label.asnumpy()[0])
                                 confusion_matrix[gt_bbox_label][predict_ind] += 1
+                                # The network inferred wrong according to the logic above but the inference 
+                                # actually matches the ground-truth
+                                if gt_bbox_label == predict_ind:
+                                    tp[gt_bbox_label] += 1 # Correct classification
                                 break         
         
         # calculate the Recall and Precision by class
