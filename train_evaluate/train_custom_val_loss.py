@@ -147,7 +147,6 @@ class training_network():
 
     def get_dataset(self):
         validation_threshold = self.validation_threshold
-        nms_threshold = self.nms_threshold
         self.train_dataset = gdata.RecordFileDetection(self.train_file)
         self.val_dataset = gdata.RecordFileDetection(self.val_file)
         self.val_metric = VOC07MApMetric(iou_thresh=validation_threshold, class_names=self.net.classes)
@@ -252,90 +251,86 @@ class training_network():
         # allow the MXNet engine to perform graph optimization for best performance.
         self.net.hybridize(static_alloc=True, static_shape=True)
 
+        num_of_classes = len(self.classes)
         # total number of correct prediction by class
-        tp = [0] * len(self.classes)
-        # count the number of gt by class
-        gt_by_class = [0] * len(self.classes)
+        tp = [0] * num_of_classes
         # false positives by class
-        fp = [0] * len(self.classes)
+        fp = [0] * num_of_classes
+        # count the number of gt by class
+        gt_by_class = [0] * num_of_classes
         # rec and prec by class
-        rec_by_class = [0] * len(self.classes)
-        prec_by_class = [0] * len(self.classes)
+        rec_by_class = [0] * num_of_classes
+        prec_by_class = [0] * num_of_classes
+        confusion_matrix = np.zeros((num_of_classes, num_of_classes))
 
         for batch in val_data:
             batch_size = batch[0].shape[0]
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
             label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
 
-            det_bboxes = []
-            det_ids = []
-            det_scores = []
-            gt_bboxes = []
-            gt_ids = []
-            gt_difficults = []
+            pred_bboxes_list = []
+            pred_label_list = []
+            pred_scores_list = []
+            gt_bboxes_list = []
+            gt_label_list = []
             
             for x, y in zip(data, label):
                 # get prediction results
                 ids, scores, bboxes = self.net(x)
-                det_ids.append(ids)
-                det_scores.append(scores)
+                pred_label_list.append(ids)
+                pred_scores_list.append(scores)
                 # clip to image size
-                det_bboxes.append(bboxes.clip(0, batch[0].shape[2]))
+                pred_bboxes_list.append(bboxes.clip(0, batch[0].shape[2]))
                 # split ground truths
-                gt_ids.append(y.slice_axis(axis=-1, begin=4, end=5))
-                gt_bboxes.append(y.slice_axis(axis=-1, begin=0, end=4))
-                # gt_difficults.append(y.slice_axis(axis=-1, begin=5, end=6) if y.shape[-1] > 5 else None)
+                gt_label_list.append(y.slice_axis(axis=-1, begin=4, end=5))
+                gt_bboxes_list.append(y.slice_axis(axis=-1, begin=0, end=4))
+
+            # Uncomment the following line if you want to plot the images in each inference to visually  check the tp, fp and fn 
+            # self.show_images(x, pred_label_list, pred_bboxes_list, gt_label_list, gt_bboxes_list)
             
             # update metric
-            val_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids) #, gt_difficults)
-
+            val_metric.update(pred_bboxes_list, pred_label_list, pred_scores_list, gt_bboxes_list, gt_label_list) #, gt_difficults)
+            
             # Get Micro Averaging (precision and recall by each class) in each batch
             for img in range(batch_size):
-                gt_ids_teste, gt_bboxes_teste = [], []
-                for ids in det_ids[0][img]:
-                    det_ids_number = (int(ids.asnumpy()[0]))
-                    # It is required to check if the predicted class is in the image
-                    # otherwise, count it as a false positive and do not include in the list
-                    if det_ids_number in list(gt_ids[0][img]):
-                        gt_index = list(gt_ids[0][img]).index(det_ids_number)
-                        gt_ids_teste.extend(gt_ids[0][img][gt_index])
-                        gt_bboxes_teste.append(gt_bboxes[0][img][gt_index])
-                    else:
-                        fp[det_ids_number] += 1  # Wrong classification
-
-                xww = 1
-                
                 # count +1 for this class id. It will get the total number of gt by class
                 # It is useful when considering unbalanced datasets
-                for gt_idx in gt_ids[0][img]:
+                for gt_idx in gt_label_list[0][img]:
                     index = int(gt_idx.asnumpy()[0])
                     gt_by_class[index] += 1
-                
-                for ids in range(len(gt_bboxes_teste)):
-                    det_bbox_ids = det_bboxes[0][img][ids]
-                    det_bbox_ids = det_bbox_ids.asnumpy()
-                    det_bbox_ids = np.expand_dims(det_bbox_ids, axis=0)
-                    predict_ind = int(det_ids[0][img][ids].asnumpy()[0])
-                    
-                    gt_bbox_ids = gt_bboxes_teste[ids]
-                    gt_bbox_ids = gt_bbox_ids.asnumpy()
-                    gt_bbox_ids = np.expand_dims(gt_bbox_ids, axis=0)
-                    gt_ind = int(gt_ids_teste[ids].asnumpy()[0])
-                    
-                    iou = bbox_iou(det_bbox_ids, gt_bbox_ids)
-
-                    # Uncomment the following line if you want to plot the images in each inference to visually  check the tp, fp and fn 
-                    # self.show_images(x, gt_bbox, det_bbox, img)
-                    
-                    # Check if IoU is above the threshold and the class id corresponds to the ground truth
-                    if (iou > validation_threshold) and (predict_ind == gt_ind):
-                        tp[gt_ind] += 1 # Correct classification
-                    else:
-                        fp[predict_ind] += 1  # Wrong classification
-        
+            
+                for (pred_label, pred_bbox) in zip(pred_label_list[0][img], list(pred_bboxes_list[0][img])):
+                    pred_label = int(pred_label.asnumpy()[0])
+                    pred_bbox = pred_bbox.asnumpy()
+                    pred_bbox = np.expand_dims(pred_bbox, axis=0)
+                    match = 0
+                    for (gt_bbox_label, gt_bbox_coordinates) in zip(gt_label_list[0][img], list(gt_bboxes_list[0][img])):
+                        gt_bbox_coord = gt_bbox_coordinates.asnumpy()
+                        gt_bbox_coord = np.expand_dims(gt_bbox_coord, axis=0)
+                        gt_bbox_label = int(gt_bbox_label.asnumpy()[0])
+                        iou = bbox_iou(pred_bbox, gt_bbox_coord)
+                        
+                        # Correct inference
+                        if iou > validation_threshold and pred_label == gt_bbox_label:
+                            confusion_matrix[gt_bbox_label][pred_label] += 1
+                            tp[gt_bbox_label] += 1 # Correct classification
+                            match = 1
+                        # Incorrect inference - missed the correct class but put the bounding box in other class
+                        elif iou > validation_threshold:
+                            confusion_matrix[gt_bbox_label][pred_label] += 1
+                            fp[pred_label] += 1
+                            match = 1
+                        
+                    if not match:
+                        fp[pred_label] += 1
+                                
         # calculate the Recall and Precision by class
-        tp = np.array(tp)
+        tp = np.array(tp) # we can also sum the matrix diagonal
         fp = np.array(fp)
+        
+        fp_sum = sum(fp)
+        tp_sum = sum(tp)
+
         # rec and prec according to the micro averaging
         for i, (gt_value, tp_value) in enumerate(zip(gt_by_class, tp)):
             rec_by_class[i] += tp_value/gt_value
@@ -344,8 +339,7 @@ class training_network():
             # the corresponding element of prec[l] is nan.
             with np.errstate(divide='ignore', invalid='ignore'):
                 prec_by_class[i] += tp_value/(tp_value+fp[i])
-
-        rec, prec = val_metric._recall_prec()
+        # rec, prec = val_metric._recall_prec()      
         return val_metric.get(), rec_by_class, prec_by_class
 
     def create_optimizer(self):

@@ -93,8 +93,6 @@ class Detector:
         for i, (gt_label, gt_bbox, pred_label, pred_bbox) in enumerate(zip(gt_label_list[0], gt_bboxes_list[0], pred_label_list[0], pred_bboxes_list[0])):
             gt_bbox = gt_bbox.asnumpy().astype(int)
             pred_bbox = pred_bbox.asnumpy().astype(int)
-            print(pred_label)
-            print(pred_bbox)
             img = x[i]
             img = img.transpose((1, 2, 0))  # Move channel to the last dimension
             # img = img.asnumpy().astype('uint8') # convert to numpy array
@@ -102,15 +100,27 @@ class Detector:
             img = img.asnumpy()
             img = img.astype(np.uint8)
             img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR) # OpenCV uses BGR order
-            for gt_lab, gt_bb, pred_lb, pred_bb in zip(gt_label, gt_bbox, pred_label, pred_bbox):
+            
+            for gt_lab, gt_bb in zip(gt_label, gt_bbox):
                 gt_lab = int(gt_lab.asnumpy()[0])
-                pred_lb = int(pred_lb.asnumpy()[0])
                 xmin_gt, ymin_gt, xmax_gt, ymax_gt = [coord for coord in gt_bb]
-                xmin_pred, ymin_pred, xmax_pred, ymax_pred = [coord for coord in pred_bb]        
                 img = cv2.rectangle(img, (xmin_gt, ymin_gt), (xmax_gt, ymax_gt), (255, 0, 0), 1)
+                if ymin_gt > 30:
+                    img = cv2.putText(img, str(gt_lab), (xmin_gt, ymin_gt - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), thickness=2)
+                else:
+                    img = cv2.putText(img, str(gt_lab), (xmin_gt, ymin_gt + (ymax_gt - ymin_gt)), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), thickness=2)
+                
+            offset = 0
+            for pred_lb, pred_bb in zip(pred_label, pred_bbox):
+                pred_lb = int(pred_lb.asnumpy()[0])
+                xmin_pred, ymin_pred, xmax_pred, ymax_pred = [coord for coord in pred_bb]        
                 img = cv2.rectangle(img, (xmin_pred, ymin_pred), (xmax_pred, ymax_pred), (0, 255, 0), 1)
-                img = cv2.putText(img, str(gt_lab), (xmin_gt, ymin_gt + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0))
-                img = cv2.putText(img, str(pred_lb), (xmin_pred + 10, ymin_pred + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0))
+                if ymin_pred > 30:
+                    img = cv2.putText(img, str(pred_lb), (xmin_pred + 8 + offset, ymin_pred - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (210, 52, 236), thickness=3)
+                else:
+                    img = cv2.putText(img, str(pred_lb), (xmin_pred + 8 + offset, ymin_pred + (ymax_gt - ymin_gt)), cv2.FONT_HERSHEY_SIMPLEX, 1, (210, 52, 236), thickness=3)
+                offset += 3
+
             cv2.startWindowThread()
             cv2.imshow('img', img)
             a = cv2.waitKey(0) # close window when ESC is pressed
@@ -137,10 +147,10 @@ class Detector:
         num_of_classes = len(self.classes)
         # total number of correct prediction by class
         tp = [0] * num_of_classes
-        # count the number of gt by class
-        gt_by_class = [0] * num_of_classes
         # false positives by class
         fp = [0] * num_of_classes
+        # count the number of gt by class
+        gt_by_class = [0] * num_of_classes
         # rec and prec by class
         rec_by_class = [0] * num_of_classes
         prec_by_class = [0] * num_of_classes
@@ -167,93 +177,50 @@ class Detector:
                 # split ground truths
                 gt_label_list.append(y.slice_axis(axis=-1, begin=4, end=5))
                 gt_bboxes_list.append(y.slice_axis(axis=-1, begin=0, end=4))
-            
+
             # Uncomment the following line if you want to plot the images in each inference to visually  check the tp, fp and fn 
-            self.show_images(x, pred_label_list, pred_bboxes_list, gt_label_list, gt_bboxes_list)
+            # self.show_images(x, pred_label_list, pred_bboxes_list, gt_label_list, gt_bboxes_list)
             
             # update metric
             val_metric.update(pred_bboxes_list, pred_label_list, pred_scores_list, gt_bboxes_list, gt_label_list) #, gt_difficults)
-
+            
             # Get Micro Averaging (precision and recall by each class) in each batch
             for img in range(batch_size):
-                gt_label_ordenado, gt_bboxes_ordenado = [], []
-                for ids in pred_label_list[0][img]:
-                    pred_label = (int(ids.asnumpy()[0]))
-                    pred_bbox = pred_bboxes_list[0][img][pred_label]
-                    
-                    # It is required to check if the predicted class is in the image
-                    # otherwise, count it as a false positive and do not include in the list
-                    if pred_label in list(gt_label_list[0][img]):    
-                        # it will only order the ground truths according to the
-                        # pred labels in order to compare correctly later on
-                        gt_index = list(gt_label_list[0][img]).index(pred_label)
-                        gt_label = gt_label_list[0][img][gt_index]
-                        gt_bbox = gt_bboxes_list[0][img][gt_index]               
-                        gt_label_ordenado.extend(gt_label)
-                        gt_bboxes_ordenado.append(gt_bbox)
-                    else:
-                        fp[pred_label] += 1  # Wrong classification
-                        pred_bbox_fc = pred_bbox.asnumpy()
-                        pred_bbox_fc = np.expand_dims(pred_bbox_fc, axis=0)
-                        # We iterate over each ground truth and check if which one matches
-                        # with the predicted bounding box and store it in the confusion matrix accordingly
-                        for (gt_bbox_label, gt_bbox_coordinates) in zip(gt_label_list[0][img], list(gt_bboxes_list[0][img])):
-                            gt_bbox_coord = gt_bbox_coordinates.asnumpy()
-                            gt_bbox_coord = np.expand_dims(gt_bbox_coord, axis=0)
-                            iou_prev = bbox_iou(pred_bbox_fc, gt_bbox_coord)
-                            # self.show_images(x, gt_bbox_coord, pred_bbox_fc, img)
-                            if iou_prev > validation_threshold:
-                                gt_bbox_label = int(gt_bbox_label.asnumpy()[0])
-                                # the network though that the gt_bbox_label was the pred_label
-                                # plot the image and check
-                                confusion_matrix[gt_bbox_label][pred_label] += 1
-                                break
-
-                
                 # count +1 for this class id. It will get the total number of gt by class
                 # It is useful when considering unbalanced datasets
                 for gt_idx in gt_label_list[0][img]:
                     index = int(gt_idx.asnumpy()[0])
                     gt_by_class[index] += 1
-                
-                for ids in range(len(gt_bboxes_ordenado)):
-                    pred_bbox_ids = pred_bboxes_list[0][img][ids]
-                    pred_bbox_ids = pred_bbox_ids.asnumpy()
-                    pred_bbox_ids = np.expand_dims(pred_bbox_ids, axis=0) # each bounding box related to the inference
-                    predict_ind = int(pred_label_list[0][img][ids].asnumpy()[0]) # each inference label
-
-                    gt_bbox_ids = gt_bboxes_ordenado[ids]
-                    gt_bbox_ids = gt_bbox_ids.asnumpy()
-                    gt_bbox_ids = np.expand_dims(gt_bbox_ids, axis=0) # each bounding box related to the ground-truth
-                    gt_ind = int(gt_label_ordenado[ids].asnumpy()[0]) # each gt label
-                    
-                    iou = bbox_iou(pred_bbox_ids, gt_bbox_ids)
-
-                    # Check if IoU is above the threshold and the class id corresponds to the ground truth
-                    if (iou > validation_threshold) and (predict_ind == gt_ind):
-                        tp[gt_ind] += 1 # Correct classification
-                        confusion_matrix[gt_ind][gt_ind]  += 1
-                        print('aqui')
-                    else:
-                        fp[predict_ind] += 1  # Wrong classification
-                        for (gt_bbox_label, gt_bbox_coordinates) in zip(gt_label_list[0][img], list(gt_bboxes_list[0][img])):
-                            gt_bbox_coord = gt_bbox_coordinates.asnumpy()
-                            gt_bbox_coord = np.expand_dims(gt_bbox_coord, axis=0)
-                            iou_prev = bbox_iou(pred_bbox_ids, gt_bbox_coord)
-                            if iou_prev > validation_threshold:
-                                gt_bbox_label = int(gt_bbox_label.asnumpy()[0])
-                                confusion_matrix[gt_bbox_label][predict_ind] += 1
-                                # The network inferred wrong according to the logic above but the inference 
-                                # actually matches the ground-truth
-                                if gt_bbox_label == predict_ind:
-                                    tp[gt_bbox_label] += 1 # Correct classification
-                                break         
-        
+            
+                for (pred_label, pred_bbox) in zip(pred_label_list[0][img], list(pred_bboxes_list[0][img])):
+                    pred_label = int(pred_label.asnumpy()[0])
+                    pred_bbox = pred_bbox.asnumpy()
+                    pred_bbox = np.expand_dims(pred_bbox, axis=0)
+                    match = 0
+                    for (gt_bbox_label, gt_bbox_coordinates) in zip(gt_label_list[0][img], list(gt_bboxes_list[0][img])):
+                        gt_bbox_coord = gt_bbox_coordinates.asnumpy()
+                        gt_bbox_coord = np.expand_dims(gt_bbox_coord, axis=0)
+                        gt_bbox_label = int(gt_bbox_label.asnumpy()[0])
+                        iou = bbox_iou(pred_bbox, gt_bbox_coord)
+                        
+                        # Correct inference
+                        if iou > validation_threshold and pred_label == gt_bbox_label:
+                            confusion_matrix[gt_bbox_label][pred_label] += 1
+                            tp[gt_bbox_label] += 1 # Correct classification
+                            match = 1
+                        # Incorrect inference - missed the correct class but put the bounding box in other class
+                        elif iou > validation_threshold:
+                            confusion_matrix[gt_bbox_label][pred_label] += 1
+                            fp[pred_label] += 1
+                            match = 1
+                        
+                    if not match:
+                        fp[pred_label] += 1
+                                
         # calculate the Recall and Precision by class
-        tp = np.array(tp)
+        tp = np.array(tp) # we can also sum the matrix diagonal
         fp = np.array(fp)
         
-        gt_by_class_sum = sum(gt_by_class)
         fp_sum = sum(fp)
         tp_sum = sum(tp)
 
@@ -265,8 +232,7 @@ class Detector:
             # the corresponding element of prec[l] is nan.
             with np.errstate(divide='ignore', invalid='ignore'):
                 prec_by_class[i] += tp_value/(tp_value+fp[i])
-
-        rec, prec = val_metric._recall_prec()        
+        # rec, prec = val_metric._recall_prec()      
         return val_metric.get(), rec_by_class, prec_by_class, gt_by_class_sum, fp_sum, tp_sum, confusion_matrix
 
 def evaluation_analysis(model_names_list, experiments_ids_list, fp_sum_list, tp_sum_list, prec_by_class_list):
