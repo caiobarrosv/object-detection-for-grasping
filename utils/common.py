@@ -24,19 +24,31 @@ def get_dataset_files():
 
     return dir_
 
-def get_model_prop(model_name):
-    if model_name.lower() == 'ssd_300_vgg16_atrous_voc':
+def get_model_prop(model):
+    if model.lower() == 'ssd_300_vgg16_atrous_voc':
+        network = 'ssd'
         width, height = 300, 300
-    elif model_name.lower() == 'ssd_512_resnet50_v1_voc':
+    elif model.lower() == 'ssd_512_resnet50_v1_voc':
+        network = 'ssd'
         width, height = 512, 512
-    elif model_name.lower() == 'ssd_512_vgg16_atrous_voc':
+    elif model.lower() == 'ssd_512_vgg16_atrous_voc':
+        network = 'ssd'
         width, height = 512, 512
-    elif model_name.lower() == 'ssd_300_vgg16_atrous_coco':
+    elif model.lower() == 'ssd_300_vgg16_atrous_coco':
+        network = 'ssd'
         width, height = 300, 300
-    elif model_name.lower() == 'ssd_512_vgg16_atrous_coco':
+    elif model.lower() == 'ssd_512_vgg16_atrous_coco':
+        network = 'ssd'
         width, height = 512, 512
-    elif model_name.lower() == 'ssd_512_resnet50_v1_coco':
+    elif model.lower() == 'ssd_512_resnet50_v1_coco':
+        network = 'ssd'
         width, height = 512, 512
+    elif model.lower() == 'yolo3_darknet53_voc':
+        network = 'yolo'
+        width, height = 300, 300
+    elif model.lower() == 'yolo3_darknet53_coco':
+        network = 'yolo'
+        width, height = 300, 300
     else:
-        raise ValueError('Invalid model `{}`.'.format(model_name.lower()))
-    return width, height
+        raise ValueError('Invalid model `{}`.'.format(model.lower()))
+    return width, height, network
