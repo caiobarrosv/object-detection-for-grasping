@@ -87,7 +87,7 @@ class training_network():
         # fix seed for mxnet, numpy and python builtin random generator.
         gutils.random.seed(233)
 
-        self.width, self.height = dataset_commons.get_model_prop(model)
+        self.width, self.height, _ = dataset_commons.get_model_prop(model)
         self.model_name = model
         
         # TODO: load the train and val rec file
@@ -223,7 +223,7 @@ class training_network():
             with np.errstate(divide='ignore', invalid='ignore'):
                 prec_by_class[i] += tp_value/(tp_value+fp[i])
         # rec, prec = val_metric._recall_prec()      
-        return val_metric.get(), rec_by_class, prec_by_class
+        return val_metric.get(), rec_by_class, prec_by_class, fp_sum, tp_sum
 
     def evaluate_main(self):
         """Training pipeline"""
@@ -233,11 +233,11 @@ class training_network():
         
         print('Analyzing validation threshold: [{}] ...'.format(self.validation_threshold))
         
-        (map_name, mean_ap), rec_by_class, prec_by_class = self.validate()
+        (map_name, mean_ap), rec_by_class, prec_by_class, fp_sum, tp_sum = self.validate()
         val_msg = '\n'.join(['{}={} | prec: [{}]'.format(k, v, x) for k, v, x in zip(map_name, mean_ap, rec_by_class)])
         print(val_msg)      
         best_map = mean_ap[-1]
-        return best_map, mean_ap
+        return best_map, mean_ap, prec_by_class, fp_sum, tp_sum
 
 if __name__ == '__main__':
     threshold = [0.5, 0.55, 0.6, 0.65, 0.70, 0.75, 0.80, 0.85, 0.9, 0.95]
@@ -267,13 +267,17 @@ if __name__ == '__main__':
                 start_train_time = time.time()
                 best_map_list = []
                 mean_ap_voc = []
+                prec_list = []
                 for thresh in threshold: 
                     train_object.update_iou(thresh)
-                    best_map, mean_ap = train_object.evaluate_main()
+                    best_map, mean_ap, prec_by_class, fp_sum, tp_sum = train_object.evaluate_main()
                     # We just want to analyze the mAPs per object using IoU of 0.5
                     if thresh == 0.5:
                         print('Saving mAPs per object...')
                         mean_ap_voc = mean_ap
+                        prec_list.append(prec_by_class) # precision is only analyzed using IoU = 0.5
+                        fp_sum_iou_05 = fp_sum
+                        tp_sum_iou_05 = tp_sum
                     print('best map: [{}] | threshold: [{}] \n'.format(best_map, thresh))
                     best_map_list.append(best_map)
                 
@@ -288,30 +292,31 @@ if __name__ == '__main__':
                 
                 bar_clamp_map, gear_box_map, vase_map, part_1_map, part_3_map, \
                     nozzle_map, pawn_map, turbine_housing_map, map_ = [round(map_*100, 2) for map_ in mean_ap_voc]
+                
+                bar_clamp_prec, gear_box_prec, vase_prec, part_1_prec, part_3_prec, \
+                    nozzle_prec, pawn_prec, turbine_housing_prec = [round(prec*100,2) for prec in prec_list[0]]
 
                 value = (model_name,
-                         map_05,
-                         map_075,
-                         media_05_095,
+                         map_05, map_075, media_05_095,
                          experiment_id_name,
-                         bar_clamp_map,
-                         gear_box_map,
-                         vase_map,
-                         part_1_map,
-                         part_3_map,
-                         nozzle_map,
-                         pawn_map,
-                         turbine_housing_map,
+                         bar_clamp_map, gear_box_map, vase_map,
+                         part_1_map, part_3_map, nozzle_map,
+                         pawn_map, turbine_housing_map, fp_sum_iou_05, tp_sum_iou_05,
+                         bar_clamp_prec, gear_box_prec, vase_prec, part_1_prec, part_3_prec,
+                         nozzle_prec, pawn_prec, turbine_housing_prec
                          )   
                 csv_list.append(value)
 
                 print('{} - mAPs [0.5:0.05:0.95]: {}'.format(model_name, best_map_list))
                 print('{} - Evaluation time [min]: {:.3f}'.format(model_name, (time.time() - start_train_time)/60))
-                print('{} - mAP IoU 0.5: [{}] | mAP  IoU 0.75: [{}] | mAP  IoU 0.5:0.95: [{}] \n'.format(model_name, map_05, map_075, media_05_095))
+                print('{} - mAP IoU 0.5: [{}] | mAP  IoU 0.75: [{}] | mAP  IoU 0.5:0.95: [{}]'.format(model_name, map_05, map_075, media_05_095))
+                print('{} - Precision by class with IoU 0.5: {} \n'.format(model_name, prec_list))
     
     column_name = ['model_name', 'map_iou_0.5', 'map_iou_0.75', 'map_iou_0.5:0.95', 'experiment_id', 'bar_clamp_map_iou_0.5',
                    'gear_box_map_iou_0.5', 'vase_map_iou_0.5', 'part_1_map_iou_0.5', 'part_3_map_iou_0.5',
-                   'nozzle_map_iou_0.5', 'pawn_map_iou_0.5', 'turbine_housing_map_iou_0.5']
+                   'nozzle_map_iou_0.5', 'pawn_map_iou_0.5', 'turbine_housing_map_iou_0.5', 'false_positives', 'true_positives',
+                   'bar_clamp_prec_iou_0.5', 'gear_box_prec_iou_0.5', 'vase_prec_iou_0.5', 'part_1_prec_iou_0.5', 'part_3_prec_iou_0.5',
+                   'nozzle_prec_iou_0.5', 'pawn_prec_iou_0.5', 'turbine_housing_prec_iou_0.5',]
     csv_df = pd.DataFrame(csv_list, columns=column_name)
     csv_df.to_csv(csv_path_save, index=None)
     print(coco_metric_dic_list)
