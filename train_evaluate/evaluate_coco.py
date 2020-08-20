@@ -316,7 +316,7 @@ if __name__ == '__main__':
                    'gear_box_map_iou_0.5', 'vase_map_iou_0.5', 'part_1_map_iou_0.5', 'part_3_map_iou_0.5',
                    'nozzle_map_iou_0.5', 'pawn_map_iou_0.5', 'turbine_housing_map_iou_0.5', 'false_positives', 'true_positives',
                    'bar_clamp_prec_iou_0.5', 'gear_box_prec_iou_0.5', 'vase_prec_iou_0.5', 'part_1_prec_iou_0.5', 'part_3_prec_iou_0.5',
-                   'nozzle_prec_iou_0.5', 'pawn_prec_iou_0.5', 'turbine_housing_prec_iou_0.5',]
+                   'nozzle_prec_iou_0.5', 'pawn_prec_iou_0.5', 'turbine_housing_prec_iou_0.5']
     csv_df = pd.DataFrame(csv_list, columns=column_name)
     csv_df.to_csv(csv_path_save, index=None)
     print(coco_metric_dic_list)
