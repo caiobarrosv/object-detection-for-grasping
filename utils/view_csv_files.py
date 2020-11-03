@@ -12,7 +12,8 @@ the images pointed in the csv file and the related bounding boxes using openCV
 dir_files = dataset_commons.get_dataset_files()
 
 def load_images_from_csv(images_path, csv_path):
-
+    images_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', images_path))
+    csv_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', csv_path))
     train_samples = pd.read_csv(csv_path)
     csv_list = []
 
