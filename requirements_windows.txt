@@ -34,7 +34,7 @@ ipython @ file:///C:/ci/ipython_1593446240034/work
 ipython-genutils==0.2.0
 isort==4.3.21
 jedi @ file:///C:/ci/jedi_1596472773465/work
-Jinja2==2.11.2
+Jinja2==2.11.3
 joblib @ file:///tmp/build/80754af9/joblib_1594236160679/work
 jsonpointer==2.0
 jsonref==0.2
