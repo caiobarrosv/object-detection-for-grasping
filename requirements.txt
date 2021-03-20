@@ -23,7 +23,7 @@ ipython @ file:///D:/bld/ipython_1593235603364/work
 ipython-genutils==0.2.0
 isort==4.3.21
 jedi @ file:///D:/bld/jedi_1595018491436/work
-Jinja2==2.11.2
+Jinja2==2.11.3
 jsonschema==3.2.0
 jupyter-client @ file:///home/conda/feedstock_root/build_artifacts/jupyter_client_1594732094290/work
 jupyter-core==4.6.3
