@@ -95,7 +95,7 @@ pyzmq==19.0.1
 requests @ file:///home/conda/feedstock_root/build_artifacts/requests_1592425495151/work
 requests-oauthlib @ file:///home/conda/feedstock_root/build_artifacts/requests-oauthlib_1595492159598/work
 rfc3987==1.3.8
-rsa==4.6
+rsa==4.7
 scikit-learn @ file:///C:/ci/scikit-learn_1592853528256/work
 scipy==1.5.1
 Send2Trash==1.5.0
